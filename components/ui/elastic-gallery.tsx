@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { ArrowUpLeft } from "lucide-react";
 import { useState } from "react";
+import { GenLayerMarkAnim } from "@/components/ui/genlayer-mark-anim";
 
 export interface ElasticItem {
   id: string;
@@ -58,9 +59,10 @@ function ElasticGallery({ items }: { items: ElasticItem[] }) {
                 />
               ) : (
                 <div
-                  className="h-full w-full flex items-center justify-center p-6"
+                  className="relative h-full w-full flex items-center justify-center p-6"
                   style={{ background: FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length] }}
                 >
+                  <GenLayerMarkAnim variant="spark" size={140} className="absolute opacity-30" />
                   {activeId === item.id && item.excerpt && (
                     <p className="text-white/70 text-sm leading-7 line-clamp-6 max-w-md text-center">
                       {item.excerpt}

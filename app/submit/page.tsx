@@ -141,7 +141,7 @@ export default function SubmitPage() {
               exit={{ opacity: 0, y: -10 }}
               className="flex flex-col gap-4"
             >
-              <h1 className="text-2xl font-black text-center">ثبت پست جدید</h1>
+              <h1 className="font-nastaliq text-2xl font-black text-center">ثبت پست جدید</h1>
               <p className="text-muted-foreground text-sm text-center leading-7">
                 لینک توییتت را وارد کن؛ در مرحله بعد بخشش را انتخاب می‌کنی.
               </p>

@@ -73,7 +73,7 @@ export default function VotePage() {
         >
           {status.open ? <Vote size={28} /> : <Lock size={26} />}
         </span>
-        <h1 className="text-3xl font-black">رای‌گیری هفته {faNum(status.week)}</h1>
+        <h1 className="font-nastaliq text-3xl font-black">رای‌گیری هفته {faNum(status.week)}</h1>
         {status.open ? (
           <p className="text-emerald-400 text-sm font-bold">
             رای‌گیری باز است! در هر بخش به یک پست رای بده.

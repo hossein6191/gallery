@@ -63,7 +63,7 @@ export default function HomePage() {
       {/* Hero + member sphere at the very top */}
       <section className="flex flex-col items-center gap-6 text-center">
         <MemberSphere size={480} />
-        <h1 className="text-3xl md:text-5xl font-black leading-tight">
+        <h1 className="font-nastaliq-lg text-3xl md:text-5xl font-black">
           گالری جامعه فارسی{" "}
           <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
             GenLayer
@@ -98,7 +98,7 @@ export default function HomePage() {
       {/* Art showcase */}
       <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+          <h2 className="font-nastaliq text-xl md:text-2xl font-bold flex items-center gap-2">
             <Palette className="text-pink-400" size={22} />
             گالری هنری
           </h2>
@@ -118,7 +118,7 @@ export default function HomePage() {
       {/* Text posts */}
       <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+          <h2 className="font-nastaliq text-xl md:text-2xl font-bold flex items-center gap-2">
             <FileText className="text-cyan-400" size={22} />
             محتوای متنی
           </h2>
@@ -143,7 +143,7 @@ export default function HomePage() {
       {videoRows.length > 0 && (
         <section className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <h2 className="font-nastaliq text-xl md:text-2xl font-bold flex items-center gap-2">
               <Clapperboard className="text-violet-400" size={22} />
               گالری ویدیو
               <span className="text-[10px] font-bold rounded-full bg-violet-500/15 text-violet-400 px-3 py-1">

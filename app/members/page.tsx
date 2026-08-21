@@ -33,7 +33,7 @@ export default function MembersPage() {
         <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary/15 text-secondary">
           <Users size={28} />
         </span>
-        <h1 className="text-3xl font-black">اعضای گالری</h1>
+        <h1 className="font-nastaliq text-3xl font-black">اعضای گالری</h1>
         <p className="text-muted-foreground">
           {faNum(members.length)} عضو — همدیگر را پیدا کنید و دنبال کنید
         </p>

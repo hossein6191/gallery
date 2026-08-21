@@ -55,7 +55,7 @@ export default function WinnersPage() {
         <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-yellow-500/15 text-yellow-400">
           <Trophy size={28} />
         </span>
-        <h1 className="text-3xl font-black">تالار افتخارات</h1>
+        <h1 className="font-nastaliq text-3xl font-black">تالار افتخارات</h1>
         <p className="text-muted-foreground max-w-lg leading-8">
           برندگان هر هفته برای همیشه اینجا ثبت می‌شوند — از هر بخش ۳ نفر، با رای
           اعضای جامعه در روز {votingDayNameFa()}.

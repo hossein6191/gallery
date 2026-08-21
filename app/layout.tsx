@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
+import { Vazirmatn, Noto_Nastaliq_Urdu } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { AnimatedBackground } from "@/components/animated-background";
+import { GenLayerMarkAnim } from "@/components/ui/genlayer-mark-anim";
 import "./globals.css";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
   variable: "--font-vazir",
+});
+
+// Nastaliq is display type for headings only (classes .font-nastaliq / -lg)
+const nastaliq = Noto_Nastaliq_Urdu({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-nastaliq",
 });
 
 export const metadata: Metadata = {
@@ -22,18 +30,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body className={`${vazir.variable} antialiased`}>
+      <body className={`${vazir.variable} ${nastaliq.variable} antialiased`}>
         <AnimatedBackground />
         <Navbar />
         <main className="mx-auto max-w-6xl px-4 pb-24">{children}</main>
         <footer className="border-t border-white/5 py-8">
           <div className="flex flex-col items-center gap-3 text-muted-foreground text-xs">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/GenLayer_Logo_White_Cropped.svg"
-              alt="GenLayer"
-              className="h-5 opacity-60"
-            />
+            <div className="flex items-center gap-3">
+              <GenLayerMarkAnim variant="liquid" size={28} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/GenLayer_Logo_White_Cropped.svg"
+                alt="GenLayer"
+                className="h-5 opacity-60"
+              />
+            </div>
             <p className="flex items-center gap-2">
               گالری جامعه فارسی GenLayer — ساخته شده توسط
               <a

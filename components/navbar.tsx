@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { avatarUrl, cn } from "@/lib/utils";
 import { Menu, X, LogOut } from "lucide-react";
+import { GenLayerMarkAnim } from "@/components/ui/genlayer-mark-anim";
 
 type User = {
   id: number;
@@ -49,9 +50,8 @@ export function Navbar() {
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-white/5">
       <nav className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2 font-black text-lg shrink-0">
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15 p-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/GenLayer_Mark_White.svg" alt="GenLayer" className="w-full h-full" />
+          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15">
+            <GenLayerMarkAnim variant="strata" size={20} />
           </span>
           <span>
             گالری فارسی <span className="text-primary">GenLayer</span>

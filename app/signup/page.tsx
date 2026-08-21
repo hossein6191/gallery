@@ -82,7 +82,7 @@ export default function SignupPage() {
     <div className="min-h-[75vh] flex items-center justify-center py-12">
       <div className="glass-panel w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-black">عضویت در گالری</h1>
+          <h1 className="font-nastaliq text-2xl font-black">عضویت در گالری</h1>
           <p className="text-muted-foreground text-sm mt-2 leading-7">
             چون جامعه غیررسمی است، با یوزرنیم توییتر و دیسکوردت ثبت‌نام می‌کنی و
             یک رمز عبور می‌سازی تا بعداً بتوانی وارد پروفایلت شوی.

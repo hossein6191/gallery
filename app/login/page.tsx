@@ -42,7 +42,7 @@ export default function LoginPage() {
     <div className="min-h-[75vh] flex items-center justify-center py-12">
       <div className="glass-panel w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-black">ورود به گالری</h1>
+          <h1 className="font-nastaliq text-2xl font-black">ورود به گالری</h1>
           <p className="text-muted-foreground text-sm mt-2">
             با یوزرنیم توییتر و رمز عبورت وارد شو
           </p>

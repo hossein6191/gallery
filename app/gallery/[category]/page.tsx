@@ -60,7 +60,7 @@ export default async function GalleryPage({
             <Icon size={22} />
           </span>
           <div>
-            <h1 className="text-2xl font-black">{meta.title}</h1>
+            <h1 className="font-nastaliq text-2xl font-black">{meta.title}</h1>
             <p className="text-muted-foreground text-sm">{meta.desc}</p>
           </div>
         </div>

@@ -21,6 +21,8 @@
   --ring: #9b6af6;
   --gl-blue: #110fff;
   --gl-navy: #282b5d;
+  /* global tempo for every background loop — 1.4 = calmer, 0.7 = livelier */
+  --gl-speed: 1;
 }
 
 @theme inline {
@@ -54,6 +56,20 @@ body {
   min-height: 100vh;
 }
 
+/* Nastaliq display type — headings only. Body copy stays Vazirmatn.
+   Nastaliq ink cascades diagonally well below its line box, so every
+   run needs a large line-height and must not wrap. */
+.font-nastaliq {
+  font-family: var(--font-nastaliq), var(--font-vazir), serif;
+  line-height: 2.7;
+  white-space: nowrap;
+}
+.font-nastaliq-lg {
+  font-family: var(--font-nastaliq), var(--font-vazir), serif;
+  line-height: 3.5;
+  white-space: nowrap;
+}
+
 .glass-panel {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.09);
@@ -80,7 +96,7 @@ body {
   background: rgba(255, 255, 255, 0.07);
 }
 
-/* ---- animated GenLayer gradient background ---- */
+/* ---- animated GenLayer background ---- */
 @keyframes gl-drift-1 {
   0% { transform: translate(0, 0) scale(1); }
   33% { transform: translate(8vw, -6vh) scale(1.15); }
@@ -102,6 +118,36 @@ body {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.85; }
 }
+@keyframes gl-ribbon-1 {
+  0%   { transform: rotate(-14deg) translate3d(-16%, 4%, 0); opacity: 0; }
+  14%  { opacity: 0.8; }
+  86%  { opacity: 0.8; }
+  100% { transform: rotate(-14deg) translate3d(16%, -6%, 0); opacity: 0; }
+}
+@keyframes gl-ribbon-2 {
+  0%   { transform: rotate(8deg) translate3d(15%, -3%, 0); opacity: 0; }
+  16%  { opacity: 0.62; }
+  84%  { opacity: 0.62; }
+  100% { transform: rotate(8deg) translate3d(-15%, 7%, 0); opacity: 0; }
+}
+@keyframes gl-floor-run {
+  from { background-position: 0 0; }
+  to   { background-position: 0 440px; }
+}
+@keyframes gl-beam {
+  0%   { transform: translateY(56vh) scaleX(0.55); opacity: 0; }
+  18%  { opacity: 0.9; }
+  64%  { opacity: 0.45; }
+  100% { transform: translateY(-26vh) scaleX(1); opacity: 0; }
+}
+@keyframes gl-dust {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-180px, -240px, 0); }
+}
+@keyframes gl-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
 
 .gl-bg {
   position: fixed;
@@ -109,8 +155,7 @@ body {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 50% 0%, #101335 0%, var(--background) 60%);
+  background: radial-gradient(120% 90% at 50% 0%, #101335 0%, var(--background) 62%);
 }
 .gl-blob {
   position: absolute;
@@ -119,29 +164,38 @@ body {
   will-change: transform, opacity;
 }
 .gl-blob-1 {
-  width: 45vw;
-  height: 45vw;
-  top: -12vw;
-  right: -8vw;
-  background: radial-gradient(circle at 30% 30%, rgba(155, 106, 246, 0.55), transparent 65%);
-  animation: gl-drift-1 26s ease-in-out infinite, gl-pulse 13s ease-in-out infinite;
+  width: 46vw; height: 46vw; top: -12vw; right: -8vw;
+  background: radial-gradient(circle at 30% 30%, rgba(155, 106, 246, 0.52), transparent 65%);
+  animation: gl-drift-1 calc(26s * var(--gl-speed)) ease-in-out infinite,
+             gl-pulse calc(13s * var(--gl-speed)) ease-in-out infinite;
 }
 .gl-blob-2 {
-  width: 40vw;
-  height: 40vw;
-  bottom: -14vw;
-  left: -10vw;
+  width: 40vw; height: 40vw; bottom: -14vw; left: -10vw;
   background: radial-gradient(circle at 60% 40%, rgba(227, 125, 247, 0.4), transparent 65%);
-  animation: gl-drift-2 31s ease-in-out infinite, gl-pulse 17s ease-in-out infinite;
+  animation: gl-drift-2 calc(31s * var(--gl-speed)) ease-in-out infinite,
+             gl-pulse calc(17s * var(--gl-speed)) ease-in-out infinite;
 }
 .gl-blob-3 {
-  width: 34vw;
-  height: 34vw;
-  top: 30%;
-  left: 22%;
-  background: radial-gradient(circle at 50% 50%, rgba(17, 15, 255, 0.35), transparent 60%);
-  animation: gl-drift-3 38s ease-in-out infinite, gl-pulse 21s ease-in-out infinite;
+  width: 34vw; height: 34vw; top: 28%; left: 20%;
+  background: radial-gradient(circle at 50% 50%, rgba(17, 15, 255, 0.36), transparent 60%);
+  animation: gl-drift-3 calc(38s * var(--gl-speed)) ease-in-out infinite,
+             gl-pulse calc(21s * var(--gl-speed)) ease-in-out infinite;
 }
+
+/* aurora ribbons */
+.gl-ribbon { position: absolute; left: -20%; width: 140%; mix-blend-mode: screen; }
+.gl-ribbon-1 {
+  top: 12%; height: 220px; filter: blur(46px);
+  background: linear-gradient(90deg, transparent 0%, rgba(227,125,247,.16) 26%, rgba(155,106,246,.3) 52%, rgba(17,15,255,.14) 74%, transparent 100%);
+  animation: gl-ribbon-1 calc(22s * var(--gl-speed)) ease-in-out infinite;
+}
+.gl-ribbon-2 {
+  top: 44%; height: 160px; filter: blur(40px);
+  background: linear-gradient(90deg, transparent 0%, rgba(155,106,246,.2) 30%, rgba(227,125,247,.24) 60%, transparent 100%);
+  animation: gl-ribbon-2 calc(29s * var(--gl-speed)) ease-in-out infinite calc(-6s * var(--gl-speed));
+}
+
+/* flat grid + perspective layer floor */
 .gl-grid {
   position: absolute;
   inset: 0;
@@ -151,10 +205,73 @@ body {
   background-size: 56px 56px;
   mask-image: radial-gradient(80% 60% at 50% 20%, black, transparent 85%);
 }
+.gl-floor {
+  position: absolute;
+  left: -25%; right: -25%; bottom: -6%;
+  height: 62vh;
+  perspective: 520px;
+  perspective-origin: 50% 0%;
+  overflow: hidden;
+  opacity: 0.5;
+}
+.gl-floor-inner {
+  position: absolute;
+  inset: -40% -10% -60% -10%;
+  transform: rotateX(72deg);
+  transform-origin: 50% 0%;
+  background-image:
+    linear-gradient(rgba(155, 106, 246, 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(227, 125, 247, 0.16) 1px, transparent 1px);
+  background-size: 110px 110px;
+  mask-image: linear-gradient(to top, black 8%, transparent 62%);
+  animation: gl-floor-run calc(14s * var(--gl-speed)) linear infinite;
+}
+
+/* rising light beams */
+.gl-beam { position: absolute; top: 0; height: 1px; }
+.gl-beam-1 { left: 8%;  right: 8%;  background: linear-gradient(90deg, transparent, rgba(227,125,247,.55), transparent); animation: gl-beam calc(11s * var(--gl-speed)) linear infinite; }
+.gl-beam-2 { left: 26%; right: 26%; background: linear-gradient(90deg, transparent, rgba(155,106,246,.5), transparent);  animation: gl-beam calc(15s * var(--gl-speed)) linear infinite calc(-5s * var(--gl-speed)); }
+.gl-beam-3 { left: 2%;  right: 44%; background: linear-gradient(90deg, transparent, rgba(17,15,255,.5), transparent);    animation: gl-beam calc(19s * var(--gl-speed)) linear infinite calc(-12s * var(--gl-speed)); }
+
+/* drifting star dust */
+.gl-dust {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 40px 60px, rgba(242,242,250,.7), transparent),
+    radial-gradient(1.5px 1.5px at 180px 210px, rgba(227,125,247,.6), transparent),
+    radial-gradient(1px 1px at 300px 90px, rgba(242,242,250,.5), transparent),
+    radial-gradient(1.5px 1.5px at 120px 330px, rgba(155,106,246,.55), transparent),
+    radial-gradient(1px 1px at 380px 300px, rgba(242,242,250,.45), transparent),
+    radial-gradient(1px 1px at 250px 400px, rgba(242,242,250,.4), transparent);
+  background-size: 440px 440px;
+  animation: gl-dust calc(48s * var(--gl-speed)) linear infinite,
+             gl-twinkle calc(7s * var(--gl-speed)) ease-in-out infinite;
+}
+
+.gl-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 26%, transparent 38%, rgba(7, 8, 26, 0.72) 100%);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .gl-blob { animation: none; }
+  .gl-bg * { animation: none !important; }
 }
+
+/* ---- GenLayer mark animations (see components/ui/genlayer-mark-anim.tsx) ---- */
+@keyframes gl-strata { from { transform: translateY(0); } to { transform: translateY(18px); } }
+@keyframes gl-halo-ring {
+  0%   { transform: scale(0.42); opacity: 0; }
+  22%  { opacity: 0.5; }
+  100% { transform: scale(1.08); opacity: 0; }
+}
+@keyframes gl-prism-a { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-4px, -2.2px); } }
+@keyframes gl-prism-b { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(4px, -1.2px); } }
+@keyframes gl-prism-c { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, 3px); } }
+@keyframes gl-word-grad { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes gl-icon-float { 0%, 100% { opacity: .8; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
 @keyframes fadeIn {
   from { opacity: 0; }

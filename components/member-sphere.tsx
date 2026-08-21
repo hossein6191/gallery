@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SphereImageGrid, { type MemberSphereItem } from "@/components/ui/image-sphere";
+import { GenLayerMarkAnim } from "@/components/ui/genlayer-mark-anim";
 import { avatarUrl } from "@/lib/utils";
 
 type Member = {
@@ -45,7 +46,12 @@ export function MemberSphere({ size = 520 }: { size?: number }) {
   if (loaded && !items.length) return null;
 
   return (
-    <div className="flex justify-center">
+    <div className="relative flex justify-center">
+      {/* GenLayer mark glowing at the heart of the sphere */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <GenLayerMarkAnim variant="halo" size={340} className="absolute" />
+        <GenLayerMarkAnim variant="prism" size={104} />
+      </div>
       <SphereImageGrid
         images={items}
         containerSize={size}
