@@ -1,26 +1,104 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b0d14;
+  --foreground: #f1f2f8;
+  --card: #12141f;
+  --card-foreground: #f1f2f8;
+  --muted: #1a1d2c;
+  --muted-foreground: #9aa0b5;
+  --primary: #8b7cf8;
+  --primary-foreground: #0b0d14;
+  --secondary: #22d3ee;
+  --secondary-foreground: #0b0d14;
+  --accent: #1e2233;
+  --accent-foreground: #f1f2f8;
+  --destructive: #f87171;
+  --border: #262b3f;
+  --input: #262b3f;
+  --ring: #8b7cf8;
+  --chart-1: #8b7cf8;
+  --chart-3: #22d3ee;
+  --chart-4: #f472b6;
+  --chart-5: #facc15;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-vazir), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vazir), system-ui, sans-serif;
+  min-height: 100vh;
 }
+
+/* soft gradient glow behind the whole page */
+.page-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(600px 400px at 85% -5%, rgba(139, 124, 248, 0.18), transparent 70%),
+    radial-gradient(700px 500px at 10% 20%, rgba(34, 211, 238, 0.1), transparent 70%),
+    radial-gradient(500px 400px at 60% 110%, rgba(244, 114, 182, 0.1), transparent 70%);
+  pointer-events: none;
+}
+
+.glass-panel {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(14px);
+  border-radius: 1.25rem;
+}
+
+.glass-input {
+  width: 100%;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.65rem 1rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+}
+.glass-input::placeholder {
+  color: rgba(241, 242, 248, 0.35);
+}
+.glass-input:focus {
+  border-color: rgba(139, 124, 248, 0.7);
+  box-shadow: 0 0 0 3px rgba(139, 124, 248, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-scale-in { animation: scaleIn 0.3s ease-out; }

@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# گالری جامعه فارسی GenLayer
 
-## Getting Started
+سایت فارسی (RTL) برای جامعه GenLayer — اعضا با یوزرنیم توییتر و دیسکورد عضو می‌شوند، توییت‌های خود را در دو بخش «هنری» و «محتوای متنی» ثبت می‌کنند و هر هفته با رای اعضا، از هر بخش ۳ برنده انتخاب و برای همیشه در تالار افتخارات ثبت می‌شود.
 
-First, run the development server:
+## اجرا در سیستم خودت
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
+node scripts/seed.mjs   # (اختیاری) داده نمونه — دیتابیس را پاک و پر می‌کند
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## امکانات
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **ثبت‌نام / ورود**: یوزرنیم توییتر + اسم نمایشی + یوزرنیم دیسکورد + رمز عبور (با نوار قدرت رمز). بدون OAuth — چون جامعه غیررسمی است.
+- **کره سه‌بعدی اعضا** بالای صفحه اصلی — کلیک روی هر پروفایل، لینک توییترش را باز می‌کند.
+- **ثبت پست**: لینک توییت را می‌دهی، می‌پرسد هنری است یا متنی، با انیمیشن پیشرفت ذخیره می‌شود.
+- **اصلاح لینک**: فقط لینک توییت (اگر اشتباه ثبت شده) از پروفایل قابل ویرایش است.
+- **رای‌گیری**: فقط روز جمعه (به وقت تهران) باز است؛ هر عضو در هر بخش یک رای. با `VOTE_WEEKDAY` قابل تغییر است.
+- **تالار افتخارات**: بعد از پایان هر هفته، ۳ برتر هر بخش به‌صورت خودکار و دائمی ثبت می‌شوند (شماره هفته + تعداد رای). با نگه‌داشتن موس روی برنده، پروفایل و توییتش نمایش داده می‌شود.
+- **جستجوی اعضا** با یوزرنیم توییتر یا اسم.
+- مصرف API توییتر حداقلی است: محتوای توییت فقط یک بار موقع ثبت گرفته و در دیتابیس ذخیره می‌شود؛ آواتارها از unavatar.io (رایگان، بدون کلید) می‌آیند.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## دیپلوی روی Railway
 
-## Learn More
+1. پروژه را روی GitHub بگذار و در Railway یک سرویس از روی آن بساز (Next.js خودکار شناسایی می‌شود).
+2. یک **Volume** بساز و به مسیر `/data` وصل کن (تا دیتابیس با هر دیپلوی پاک نشود).
+3. در بخش **Variables** این متغیرها را تنظیم کن:
 
-To learn more about Next.js, take a look at the following resources:
+| متغیر | مقدار |
+|---|---|
+| `AUTH_SECRET` | یک رشته تصادفی طولانی (مثلا خروجی `openssl rand -hex 32`) |
+| `DATABASE_PATH` | `/data/gallery.db` |
+| `TWITTER_BEARER_TOKEN` | توکن Bearer از پنل توسعه‌دهنده X — **فقط اینجا، هرگز در کد یا چت** |
+| `VOTE_WEEKDAY` | (اختیاری) روز رای‌گیری، پیش‌فرض `friday` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+بدون `TWITTER_BEARER_TOKEN` هم سایت کار می‌کند: متن توییت از oEmbed رایگان گرفته می‌شود و فقط تصویر توییت خودکار نمی‌آید (کاربر می‌تواند لینک تصویر را دستی بدهد).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ساختار
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` — صفحات (خانه، ثبت‌نام، ورود، ثبت پست، گالری‌ها، رای‌گیری، برندگان، اعضا، پروفایل) و API
+- `components/ui/` — کامپوننت‌ها (دکمه liquid glass، کره سه‌بعدی، گالری کشسان، نوار قدرت رمز، حلقه پیشرفت، پودیوم برندگان)
+- `lib/` — دیتابیس SQLite، احراز هویت JWT، منطق هفته/رای‌گیری به وقت تهران، دریافت توییت

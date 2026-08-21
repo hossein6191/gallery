@@ -1,69 +1,159 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
+import { votingDayNameFa } from "@/lib/week";
+import { faNum } from "@/lib/utils";
+import { MemberSphere } from "@/components/member-sphere";
+import { ElasticGallery, type ElasticItem } from "@/components/ui/elastic-gallery";
+import { TweetCard } from "@/components/tweet-card";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
+import { Palette, FileText, Trophy, Vote } from "lucide-react";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default function HomePage() {
+  const db = getDb();
+  const week = currentWeekNumber();
+
+  const artRows = db
+    .prepare(
+      `SELECT s.*, u.twitter_handle, u.display_name,
+              (SELECT COUNT(*) FROM votes v WHERE v.submission_id = s.id) AS vote_count
+       FROM submissions s JOIN users u ON u.id = s.user_id
+       WHERE s.category = 'art'
+       ORDER BY vote_count DESC, s.created_at DESC LIMIT 5`
+    )
+    .all() as SubmissionRow[];
+
+  const textRows = db
+    .prepare(
+      `SELECT s.*, u.twitter_handle, u.display_name,
+              (SELECT COUNT(*) FROM votes v WHERE v.submission_id = s.id) AS vote_count
+       FROM submissions s JOIN users u ON u.id = s.user_id
+       WHERE s.category = 'text'
+       ORDER BY vote_count DESC, s.created_at DESC LIMIT 6`
+    )
+    .all() as SubmissionRow[];
+
+  const memberCount = (
+    db.prepare("SELECT COUNT(*) AS c FROM users").get() as { c: number }
+  ).c;
+
+  const galleryItems: ElasticItem[] = artRows.map((r) => ({
+    id: String(r.id),
+    title: r.display_name ?? "",
+    category: "هنری",
+    src: r.image_url,
+    alt: r.tweet_text ?? "اثر هنری",
+    href: r.tweet_url,
+    handle: r.twitter_handle,
+    excerpt: r.tweet_text,
+  }));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex flex-col gap-20 pt-10">
+      {/* Hero + member sphere at the very top */}
+      <section className="flex flex-col items-center gap-6 text-center">
+        <MemberSphere size={480} />
+        <h1 className="text-3xl md:text-5xl font-black leading-tight">
+          گالری جامعه فارسی{" "}
+          <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
+            GenLayer
+          </span>
+        </h1>
+        <p className="text-muted-foreground max-w-xl leading-8">
+          آثار هنری و محتوای متنی اعضای جامعه — هر هفته بهترین‌ها با رای خود اعضا
+          انتخاب می‌شوند. پروفایل توییترت را ثبت کن و وارد رقابت شو.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <LiquidButton size="xl" variant="primary" asChild>
+            <Link href="/signup">عضویت در گالری</Link>
+          </LiquidButton>
+          <LiquidButton size="xl" asChild>
+            <Link href="/submit">ثبت پست</Link>
+          </LiquidButton>
+        </div>
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground mt-2">
+          <span>هفته جاری: <b className="text-foreground">هفته {faNum(week)}</b></span>
+          <span>اعضا: <b className="text-foreground">{faNum(memberCount)} نفر</b></span>
+          <span>
+            رای‌گیری: <b className="text-foreground">هر {votingDayNameFa()}</b>
+          </span>
+        </div>
+      </section>
+
+      {/* Art showcase */}
+      <section className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <Palette className="text-pink-400" size={22} />
+            گالری هنری
+          </h2>
+          <Link href="/gallery/art" className="text-sm text-primary hover:underline">
+            مشاهده همه
+          </Link>
+        </div>
+        {galleryItems.length ? (
+          <ElasticGallery items={galleryItems} />
+        ) : (
+          <div className="glass-panel border-dashed p-12 text-center text-muted-foreground">
+            هنوز اثری ثبت نشده — اولین اثر هنری را تو ثبت کن!
+          </div>
+        )}
+      </section>
+
+      {/* Text posts */}
+      <section className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <FileText className="text-cyan-400" size={22} />
+            محتوای متنی
+          </h2>
+          <Link href="/gallery/text" className="text-sm text-primary hover:underline">
+            مشاهده همه
+          </Link>
+        </div>
+        {textRows.length ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {textRows.map((r) => (
+              <TweetCard key={r.id} item={r} />
+            ))}
+          </div>
+        ) : (
+          <div className="glass-panel border-dashed p-12 text-center text-muted-foreground">
+            هنوز محتوای متنی ثبت نشده — اولین پست را تو ثبت کن!
+          </div>
+        )}
+      </section>
+
+      {/* Weekly contest banner */}
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="glass-panel p-8 flex flex-col items-start gap-4">
+          <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-yellow-500/15 text-yellow-400">
+            <Trophy size={22} />
+          </span>
+          <h3 className="text-lg font-bold">برندگان هفتگی</h3>
+          <p className="text-muted-foreground text-sm leading-7">
+            هر هفته ۳ برنده از بخش هنری و ۳ برنده از بخش متنی انتخاب می‌شوند و
+            برای همیشه در تالار افتخارات می‌مانند.
           </p>
+          <LiquidButton asChild>
+            <Link href="/winners">تالار افتخارات</Link>
+          </LiquidButton>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="glass-panel p-8 flex flex-col items-start gap-4">
+          <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-primary/15 text-primary">
+            <Vote size={22} />
+          </span>
+          <h3 className="text-lg font-bold">رای‌گیری هفتگی</h3>
+          <p className="text-muted-foreground text-sm leading-7">
+            هر {votingDayNameFa()} صفحه رای‌گیری باز می‌شود و اعضا به بهترین پست هر
+            بخش رای می‌دهند. هر عضو در هر بخش یک رای دارد.
+          </p>
+          <LiquidButton asChild>
+            <Link href="/vote">صفحه رای‌گیری</Link>
+          </LiquidButton>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

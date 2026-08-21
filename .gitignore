@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local database
+data/
+.env.local
+
+# macOS metadata on external volumes
+._*
+.DS_Store
