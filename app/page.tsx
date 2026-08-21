@@ -63,7 +63,7 @@ export default function HomePage() {
       {/* Hero + member sphere at the very top */}
       <section className="flex flex-col items-center gap-6 text-center">
         <MemberSphere size={480} />
-        <h1 className="font-nastaliq-lg text-3xl md:text-5xl font-black">
+        <h1 className="font-nastaliq-lg max-sm:whitespace-normal max-sm:leading-[2.6] text-2xl sm:text-3xl md:text-5xl font-black">
           گالری جامعه فارسی{" "}
           <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
             GenLayer

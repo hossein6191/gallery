@@ -32,7 +32,7 @@ function WinnerColumn({ entry }: { entry: WinnerEntry }) {
     >
       {/* hover tooltip: profile + tweet */}
       {hovered && (
-        <div className="absolute bottom-full mb-3 z-30 w-64 glass-panel bg-card/95 p-4 text-right animate-fade-in">
+        <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-3 z-30 w-64 max-w-[85vw] glass-panel bg-card/95 p-4 text-right animate-fade-in">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -54,7 +54,7 @@ function WinnerColumn({ entry }: { entry: WinnerEntry }) {
             </div>
           </div>
           {entry.tweetText && (
-            <p className="mt-3 text-xs text-muted-foreground leading-6 line-clamp-3">
+            <p dir="auto" className="mt-3 text-xs text-muted-foreground leading-6 line-clamp-3">
               {entry.tweetText}
             </p>
           )}

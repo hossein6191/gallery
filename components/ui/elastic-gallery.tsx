@@ -64,7 +64,7 @@ function ElasticGallery({ items }: { items: ElasticItem[] }) {
                 >
                   <GenLayerMarkAnim variant="spark" size={140} className="absolute opacity-30" />
                   {activeId === item.id && item.excerpt && (
-                    <p className="text-white/70 text-sm leading-7 line-clamp-6 max-w-md text-center">
+                    <p dir="auto" className="text-white/70 text-sm leading-7 line-clamp-6 max-w-md text-center">
                       {item.excerpt}
                     </p>
                   )}

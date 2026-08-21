@@ -91,7 +91,7 @@ export function Navbar() {
                   alt={user.displayName}
                   className="w-7 h-7 rounded-full object-cover"
                 />
-                <span className="text-sm">{user.displayName}</span>
+                <span className="text-sm max-w-[9rem] truncate">{user.displayName}</span>
               </Link>
               <button
                 onClick={logout}

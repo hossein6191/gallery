@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -54,6 +54,17 @@ export default function SubmitPage() {
       if (progressTimer.current) clearInterval(progressTimer.current);
     };
   }, []);
+
+  // object URL for the image preview, revoked when the file changes
+  const previewUrl = useMemo(
+    () => (file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null),
+    [file]
+  );
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const urlValid = /(?:twitter\.com|x\.com)\/[^/]+\/status(?:es)?\/\d+/i.test(tweetUrl);
 
@@ -297,10 +308,10 @@ export default function SubmitPage() {
                   </span>
                 )}
               </button>
-              {file && category === "art" && (
+              {previewUrl && category === "art" && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={URL.createObjectURL(file)}
+                  src={previewUrl}
                   alt="پیش‌نمایش اثر"
                   className="rounded-xl max-h-56 object-contain mx-auto"
                 />

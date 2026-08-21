@@ -16,8 +16,14 @@ export async function POST(req: Request) {
   if (!displayName) {
     return NextResponse.json({ error: "اسم نمایشی را وارد کن" }, { status: 400 });
   }
+  if (displayName.length > 40) {
+    return NextResponse.json({ error: "اسم نمایشی حداکثر ۴۰ کاراکتر باشد" }, { status: 400 });
+  }
   if (!discordUsername) {
     return NextResponse.json({ error: "یوزرنیم دیسکورد را وارد کن" }, { status: 400 });
+  }
+  if (discordUsername.length > 40) {
+    return NextResponse.json({ error: "یوزرنیم دیسکورد حداکثر ۴۰ کاراکتر باشد" }, { status: 400 });
   }
   if (password.length < 8) {
     return NextResponse.json({ error: "رمز عبور باید حداقل ۸ کاراکتر باشد" }, { status: 400 });

@@ -35,19 +35,22 @@ export default function MembersPage() {
         </span>
         <h1 className="font-nastaliq text-3xl font-black">اعضای گالری</h1>
         <p className="text-muted-foreground">
-          {faNum(members.length)} عضو — همدیگر را پیدا کنید و دنبال کنید
+          {q
+            ? `${faNum(members.length)} نتیجه برای جستجو`
+            : `${faNum(members.length)} عضو — همدیگر را پیدا کنید و دنبال کنید`}
         </p>
       </div>
 
-      <div className="relative max-w-md mx-auto w-full" dir="ltr">
+      {/* dir=auto: Latin handles flow LTR, Persian names flow RTL — never mixed */}
+      <div className="relative max-w-md mx-auto w-full">
         <Search
           size={16}
           className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
         />
         <input
-          dir="ltr"
-          className="glass-input pl-11 text-left"
-          placeholder="@username یا اسم..."
+          dir="auto"
+          className="glass-input pl-11 pr-4"
+          placeholder="جستجوی یوزرنیم توییتر یا اسم"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
