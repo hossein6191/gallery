@@ -63,13 +63,18 @@ body {
   /* Nastaliq display type — headings only. Body copy stays Vazirmatn.
      Nastaliq ink cascades diagonally well below its line box, so every
      run needs a large line-height and should not wrap. */
+  /* Tailwind's text-* utilities set `line-height: var(--tw-leading, …)`, so
+     setting --tw-leading here keeps the tall line box even though utilities
+     come later in the cascade. */
   .font-nastaliq {
     font-family: var(--font-nastaliq), var(--font-vazir), serif;
+    --tw-leading: 2.7;
     line-height: 2.7;
     white-space: nowrap;
   }
   .font-nastaliq-lg {
     font-family: var(--font-nastaliq), var(--font-vazir), serif;
+    --tw-leading: 3.5;
     line-height: 3.5;
     white-space: nowrap;
   }

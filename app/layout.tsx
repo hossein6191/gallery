@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Vazirmatn, Noto_Nastaliq_Urdu } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { AnimatedBackground } from "@/components/animated-background";
-import { GenLayerMarkAnim } from "@/components/ui/genlayer-mark-anim";
 import "./globals.css";
 
 const vazir = Vazirmatn({
@@ -36,12 +35,12 @@ export default function RootLayout({
         <main className="mx-auto max-w-6xl px-4 pb-24">{children}</main>
         <footer className="border-t border-white/5 py-8">
           <div className="flex flex-col items-center gap-3 text-muted-foreground text-xs">
-            <div className="flex items-center gap-2" dir="ltr">
-              <GenLayerMarkAnim variant="liquid" size={26} />
-              <span className="text-sm font-bold tracking-tight text-foreground/70">
-                GenLayer
-              </span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/GenLayer_Logo_White_Cropped.svg"
+              alt="GenLayer"
+              className="h-6 opacity-80"
+            />
             <p className="flex items-center gap-2">
               گالری جامعه فارسی GenLayer — ساخته شده توسط
               <a
