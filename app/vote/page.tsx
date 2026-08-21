@@ -78,7 +78,12 @@ export default function VotePage() {
           <p className="text-emerald-400 text-sm font-bold">
             رای‌گیری باز است! در هر بخش به یک پست رای بده.
           </p>
-        ) : (
+        ) : null}
+        <p className="text-muted-foreground text-xs max-w-md leading-6">
+          فقط پست‌هایی که همین هفته توییت شده‌اند اینجا می‌آیند — بخش ویدیو فعلا
+          مسابقه ندارد.
+        </p>
+        {!status.open && (
           <p className="text-muted-foreground max-w-md leading-8">
             رای‌گیری فقط روز <b className="text-foreground">{status.votingDay}</b> هر
             هفته باز می‌شود. تا آن موقع می‌توانی پست‌های این هفته را ببینی.

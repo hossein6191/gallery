@@ -23,11 +23,14 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id),
-    category TEXT NOT NULL CHECK (category IN ('art','text')),
+    category TEXT NOT NULL CHECK (category IN ('art','text','video')),
     tweet_url TEXT NOT NULL,
     tweet_id TEXT,
     tweet_text TEXT,
     image_url TEXT,
+    file_url TEXT,
+    file_type TEXT,
+    tweet_date TEXT,
     week_number INTEGER NOT NULL,
     edited INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))

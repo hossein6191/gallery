@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { avatarUrl, cn } from "@/lib/utils";
-import { Menu, X, LogOut, Sparkles } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 
 type User = {
   id: number;
@@ -17,6 +17,7 @@ const LINKS = [
   { href: "/", label: "خانه" },
   { href: "/gallery/art", label: "گالری هنری" },
   { href: "/gallery/text", label: "محتوای متنی" },
+  { href: "/gallery/video", label: "ویدیو" },
   { href: "/winners", label: "برندگان" },
   { href: "/vote", label: "رای‌گیری" },
   { href: "/members", label: "اعضا" },
@@ -48,8 +49,9 @@ export function Navbar() {
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-white/5">
       <nav className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2 font-black text-lg shrink-0">
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/20 text-primary">
-            <Sparkles size={16} />
+          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15 p-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/GenLayer_Mark_White.svg" alt="GenLayer" className="w-full h-full" />
           </span>
           <span>
             گالری فارسی <span className="text-primary">GenLayer</span>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import { Navbar } from "@/components/navbar";
+import { AnimatedBackground } from "@/components/animated-background";
 import "./globals.css";
 
 const vazir = Vazirmatn({
@@ -22,11 +23,35 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body className={`${vazir.variable} antialiased`}>
-        <div className="page-glow" />
+        <AnimatedBackground />
         <Navbar />
         <main className="mx-auto max-w-6xl px-4 pb-24">{children}</main>
-        <footer className="border-t border-white/5 py-8 text-center text-muted-foreground text-xs">
-          گالری جامعه فارسی GenLayer — ساخته شده توسط اعضای جامعه
+        <footer className="border-t border-white/5 py-8">
+          <div className="flex flex-col items-center gap-3 text-muted-foreground text-xs">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/GenLayer_Logo_White_Cropped.svg"
+              alt="GenLayer"
+              className="h-5 opacity-60"
+            />
+            <p className="flex items-center gap-2">
+              گالری جامعه فارسی GenLayer — ساخته شده توسط
+              <a
+                href="https://x.com/Hellishnum1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-foreground hover:text-primary transition-colors font-bold"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/hellish.jpg"
+                  alt="Hellish"
+                  className="w-5 h-5 rounded-full object-cover border border-white/20"
+                />
+                Hellish
+              </a>
+            </p>
+          </div>
         </footer>
       </body>
     </html>

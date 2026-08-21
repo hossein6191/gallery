@@ -6,7 +6,7 @@ import { MemberSphere } from "@/components/member-sphere";
 import { ElasticGallery, type ElasticItem } from "@/components/ui/elastic-gallery";
 import { TweetCard } from "@/components/tweet-card";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
-import { Palette, FileText, Trophy, Vote } from "lucide-react";
+import { Palette, FileText, Trophy, Vote, Clapperboard, CalendarClock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,15 @@ export default function HomePage() {
        FROM submissions s JOIN users u ON u.id = s.user_id
        WHERE s.category = 'text'
        ORDER BY vote_count DESC, s.created_at DESC LIMIT 6`
+    )
+    .all() as SubmissionRow[];
+
+  const videoRows = db
+    .prepare(
+      `SELECT s.*, u.twitter_handle, u.display_name
+       FROM submissions s JOIN users u ON u.id = s.user_id
+       WHERE s.category = 'video'
+       ORDER BY s.created_at DESC LIMIT 3`
     )
     .all() as SubmissionRow[];
 
@@ -79,6 +88,11 @@ export default function HomePage() {
             رای‌گیری: <b className="text-foreground">هر {votingDayNameFa()}</b>
           </span>
         </div>
+        <div className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/25 px-5 py-2.5 text-xs text-foreground/85">
+          <CalendarClock size={14} className="text-primary shrink-0" />
+          پست‌های <b>جدید همین هفته‌ات</b> را ثبت کن — تاریخ توییت بررسی می‌شود و
+          فقط پست‌های همین هفته وارد رای‌گیری می‌شوند.
+        </div>
       </section>
 
       {/* Art showcase */}
@@ -124,6 +138,29 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Video section (new, no weekly contest yet) */}
+      {videoRows.length > 0 && (
+        <section className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Clapperboard className="text-violet-400" size={22} />
+              گالری ویدیو
+              <span className="text-[10px] font-bold rounded-full bg-violet-500/15 text-violet-400 px-3 py-1">
+                جدید
+              </span>
+            </h2>
+            <Link href="/gallery/video" className="text-sm text-primary hover:underline">
+              مشاهده همه
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {videoRows.map((r) => (
+              <TweetCard key={r.id} item={r} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Weekly contest banner */}
       <section className="grid gap-4 md:grid-cols-2">

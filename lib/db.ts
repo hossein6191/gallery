@@ -16,6 +16,7 @@ function createDb(): Database.Database {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,11 +30,14 @@ function createDb(): Database.Database {
     CREATE TABLE IF NOT EXISTS submissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id),
-      category TEXT NOT NULL CHECK (category IN ('art','text')),
+      category TEXT NOT NULL CHECK (category IN ('art','text','video')),
       tweet_url TEXT NOT NULL,
       tweet_id TEXT,
       tweet_text TEXT,
       image_url TEXT,
+      file_url TEXT,
+      file_type TEXT,
+      tweet_date TEXT,
       week_number INTEGER NOT NULL,
       edited INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -67,6 +71,8 @@ function createDb(): Database.Database {
     );
   `);
 
+  migrateSubmissions(db);
+
   // Record the Saturday of the launch week once; week numbers count from it.
   const existing = db
     .prepare("SELECT value FROM meta WHERE key = 'launch_week_start'")
@@ -77,6 +83,81 @@ function createDb(): Database.Database {
     );
   }
   return db;
+}
+
+/** Upgrade databases created before the video category / file uploads existed. */
+function migrateSubmissions(db: Database.Database): void {
+  const cols = (db.prepare("PRAGMA table_info(submissions)").all() as { name: string }[]).map(
+    (c) => c.name
+  );
+  for (const col of ["file_url", "file_type", "tweet_date"]) {
+    if (!cols.includes(col)) {
+      db.exec(`ALTER TABLE submissions ADD COLUMN ${col} TEXT`);
+    }
+  }
+
+  const tableSql = (
+    db
+      .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='submissions'")
+      .get() as { sql: string }
+  ).sql;
+  if (!tableSql.includes("'video'")) {
+    // SQLite can't relax a CHECK constraint in place — rebuild the table.
+    // foreign_keys must be off while the parent table is dropped/renamed,
+    // and concurrent dev workers may race here, so failures are tolerated
+    // when another worker already finished the migration.
+    db.pragma("foreign_keys = OFF");
+    try {
+      db.exec(`
+        BEGIN IMMEDIATE;
+        CREATE TABLE submissions_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          category TEXT NOT NULL CHECK (category IN ('art','text','video')),
+          tweet_url TEXT NOT NULL,
+          tweet_id TEXT,
+          tweet_text TEXT,
+          image_url TEXT,
+          file_url TEXT,
+          file_type TEXT,
+          tweet_date TEXT,
+          week_number INTEGER NOT NULL,
+          edited INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO submissions_new (id, user_id, category, tweet_url, tweet_id, tweet_text,
+          image_url, file_url, file_type, tweet_date, week_number, edited, created_at)
+        SELECT id, user_id, category, tweet_url, tweet_id, tweet_text,
+          image_url, file_url, file_type, tweet_date, week_number, edited, created_at
+        FROM submissions;
+        DROP TABLE submissions;
+        ALTER TABLE submissions_new RENAME TO submissions;
+        COMMIT;
+      `);
+    } catch (err) {
+      try {
+        db.exec("ROLLBACK;");
+      } catch {
+        // no open transaction
+      }
+      const nowSql = (
+        db
+          .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='submissions'")
+          .get() as { sql: string }
+      ).sql;
+      if (!nowSql.includes("'video'")) throw err;
+    } finally {
+      db.pragma("foreign_keys = ON");
+    }
+  }
+}
+
+/** Directory for uploaded art/video files — lives next to the DB so the
+ *  Railway volume persists it. */
+export function uploadsDir(): string {
+  const dir = path.join(path.dirname(DB_PATH), "uploads");
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
 }
 
 export function getDb(): Database.Database {
@@ -109,12 +190,15 @@ export type UserRow = {
 export type SubmissionRow = {
   id: number;
   user_id: number;
-  category: "art" | "text";
+  category: "art" | "text" | "video";
   tweet_url: string;
   tweet_id: string | null;
   tweet_text: string | null;
   image_url: string | null;
-  week_number: number;
+  file_url: string | null;
+  file_type: "image" | "video" | null;
+  tweet_date: string | null;
+  week_number: number; // 0 = in the gallery but not in any week's contest
   edited: number;
   created_at: string;
   // joined

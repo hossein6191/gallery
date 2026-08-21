@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
+/* GenLayer brand palette (Brand Guidelines v1.0):
+   orchid #E37DF7 · purple #9B6AF6 · blue #110FFF · navy #282B5D */
 :root {
-  --background: #0b0d14;
-  --foreground: #f1f2f8;
-  --card: #12141f;
-  --card-foreground: #f1f2f8;
-  --muted: #1a1d2c;
-  --muted-foreground: #9aa0b5;
-  --primary: #8b7cf8;
-  --primary-foreground: #0b0d14;
-  --secondary: #22d3ee;
-  --secondary-foreground: #0b0d14;
-  --accent: #1e2233;
-  --accent-foreground: #f1f2f8;
+  --background: #07081a;
+  --foreground: #f2f2fa;
+  --card: #10122b;
+  --card-foreground: #f2f2fa;
+  --muted: #191c3d;
+  --muted-foreground: #9ba0c2;
+  --primary: #9b6af6;
+  --primary-foreground: #07081a;
+  --secondary: #e37df7;
+  --secondary-foreground: #07081a;
+  --accent: #282b5d;
+  --accent-foreground: #f2f2fa;
   --destructive: #f87171;
-  --border: #262b3f;
-  --input: #262b3f;
-  --ring: #8b7cf8;
-  --chart-1: #8b7cf8;
-  --chart-3: #22d3ee;
-  --chart-4: #f472b6;
-  --chart-5: #facc15;
+  --border: #2b2f5c;
+  --input: #2b2f5c;
+  --ring: #9b6af6;
+  --gl-blue: #110fff;
+  --gl-navy: #282b5d;
 }
 
 @theme inline {
@@ -54,18 +54,6 @@ body {
   min-height: 100vh;
 }
 
-/* soft gradient glow behind the whole page */
-.page-glow {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(600px 400px at 85% -5%, rgba(139, 124, 248, 0.18), transparent 70%),
-    radial-gradient(700px 500px at 10% 20%, rgba(34, 211, 238, 0.1), transparent 70%),
-    radial-gradient(500px 400px at 60% 110%, rgba(244, 114, 182, 0.1), transparent 70%);
-  pointer-events: none;
-}
-
 .glass-panel {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.09);
@@ -84,12 +72,88 @@ body {
   transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
 }
 .glass-input::placeholder {
-  color: rgba(241, 242, 248, 0.35);
+  color: rgba(242, 242, 250, 0.35);
 }
 .glass-input:focus {
-  border-color: rgba(139, 124, 248, 0.7);
-  box-shadow: 0 0 0 3px rgba(139, 124, 248, 0.18);
+  border-color: rgba(155, 106, 246, 0.7);
+  box-shadow: 0 0 0 3px rgba(155, 106, 246, 0.18);
   background: rgba(255, 255, 255, 0.07);
+}
+
+/* ---- animated GenLayer gradient background ---- */
+@keyframes gl-drift-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(8vw, -6vh) scale(1.15); }
+  66% { transform: translate(-5vw, 8vh) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes gl-drift-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-9vw, 7vh) scale(1.1); }
+  66% { transform: translate(6vw, -5vh) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes gl-drift-3 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(5vw, 6vh) scale(1.2) rotate(12deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes gl-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
+}
+
+.gl-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #101335 0%, var(--background) 60%);
+}
+.gl-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  will-change: transform, opacity;
+}
+.gl-blob-1 {
+  width: 45vw;
+  height: 45vw;
+  top: -12vw;
+  right: -8vw;
+  background: radial-gradient(circle at 30% 30%, rgba(155, 106, 246, 0.55), transparent 65%);
+  animation: gl-drift-1 26s ease-in-out infinite, gl-pulse 13s ease-in-out infinite;
+}
+.gl-blob-2 {
+  width: 40vw;
+  height: 40vw;
+  bottom: -14vw;
+  left: -10vw;
+  background: radial-gradient(circle at 60% 40%, rgba(227, 125, 247, 0.4), transparent 65%);
+  animation: gl-drift-2 31s ease-in-out infinite, gl-pulse 17s ease-in-out infinite;
+}
+.gl-blob-3 {
+  width: 34vw;
+  height: 34vw;
+  top: 30%;
+  left: 22%;
+  background: radial-gradient(circle at 50% 50%, rgba(17, 15, 255, 0.35), transparent 60%);
+  animation: gl-drift-3 38s ease-in-out infinite, gl-pulse 21s ease-in-out infinite;
+}
+.gl-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(80% 60% at 50% 20%, black, transparent 85%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gl-blob { animation: none; }
 }
 
 @keyframes fadeIn {

@@ -8,9 +8,24 @@ import confetti from "canvas-confetti";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { cn } from "@/lib/utils";
-import { Palette, FileText, LinkIcon, CheckCircle2 } from "lucide-react";
+import {
+  Palette,
+  FileText,
+  Clapperboard,
+  LinkIcon,
+  CheckCircle2,
+  Upload,
+  CalendarClock,
+} from "lucide-react";
 
-type Phase = "form" | "category" | "saving" | "done";
+type Category = "art" | "text" | "video";
+type Phase = "form" | "category" | "file" | "saving" | "done";
+
+const CATEGORY_INFO: Record<Category, { label: string; accept: string; fileLabel: string }> = {
+  art: { label: "هنری", accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: "فایل اثرت (تصویر، حداکثر ۸ مگابایت)" },
+  text: { label: "متنی", accept: "", fileLabel: "" },
+  video: { label: "ویدیویی", accept: "video/mp4,video/webm,video/quicktime", fileLabel: "فایل ویدیوت (MP4/WebM/MOV، حداکثر ۶۰ مگابایت)" },
+};
 
 export default function SubmitPage() {
   const router = useRouter();
@@ -18,12 +33,14 @@ export default function SubmitPage() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   const [tweetUrl, setTweetUrl] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [category, setCategory] = useState<"art" | "text" | null>(null);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
+  const [inContest, setInContest] = useState(true);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -40,31 +57,42 @@ export default function SubmitPage() {
 
   const urlValid = /(?:twitter\.com|x\.com)\/[^/]+\/status(?:es)?\/\d+/i.test(tweetUrl);
 
-  const startSave = async (chosen: "art" | "text") => {
+  const chooseCategory = (chosen: Category) => {
     setCategory(chosen);
+    setFile(null);
+    setError("");
+    if (chosen === "text") {
+      startSave(chosen, null);
+    } else {
+      setPhase("file");
+    }
+  };
+
+  const startSave = async (chosen: Category, chosenFile: File | null) => {
     setPhase("saving");
     setError("");
     setProgress(10);
 
-    // Crawl the ring forward while the server fetches & stores the tweet.
     progressTimer.current = setInterval(() => {
       setProgress((p) => (p < 85 ? p + 5 : p));
-    }, 250);
+    }, 300);
 
     try {
-      const res = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tweetUrl: tweetUrl.trim(), category: chosen, imageUrl }),
-      });
+      const form = new FormData();
+      form.append("tweetUrl", tweetUrl.trim());
+      form.append("category", chosen);
+      if (chosenFile) form.append("file", chosenFile);
+
+      const res = await fetch("/api/submissions", { method: "POST", body: form });
       const data = await res.json();
       if (progressTimer.current) clearInterval(progressTimer.current);
       if (!res.ok) {
         setError(data.error ?? "خطایی رخ داد");
-        setPhase("category");
+        setPhase(chosen === "text" ? "category" : "file");
         setProgress(0);
         return;
       }
+      setInContest(Boolean(data.inContest));
       setProgress(100);
       setTimeout(() => {
         setPhase("done");
@@ -73,7 +101,7 @@ export default function SubmitPage() {
     } catch {
       if (progressTimer.current) clearInterval(progressTimer.current);
       setError("ارتباط با سرور برقرار نشد");
-      setPhase("category");
+      setPhase(chosen === "text" ? "category" : "file");
       setProgress(0);
     }
   };
@@ -115,8 +143,17 @@ export default function SubmitPage() {
             >
               <h1 className="text-2xl font-black text-center">ثبت پست جدید</h1>
               <p className="text-muted-foreground text-sm text-center leading-7">
-                لینک توییتت را وارد کن؛ در مرحله بعد می‌پرسیم هنری است یا متنی.
+                لینک توییتت را وارد کن؛ در مرحله بعد بخشش را انتخاب می‌کنی.
               </p>
+              <div className="flex items-start gap-2 rounded-xl bg-primary/10 border border-primary/25 p-3 text-xs leading-6 text-foreground/80">
+                <CalendarClock size={15} className="text-primary shrink-0 mt-0.5" />
+                <span>
+                  <b>پست‌های جدیدت را ثبت کن!</b> تاریخ توییت بررسی می‌شود — فقط
+                  پست‌هایی که <b>همین هفته</b> توییت شده‌اند وارد رای‌گیری این هفته
+                  می‌شوند. پست‌های قدیمی‌تر هم ثبت می‌شوند ولی فقط در گالری
+                  نمایش داده می‌شوند.
+                </span>
+              </div>
               <label className="text-sm font-medium mt-2">لینک توییت</label>
               <div className="relative">
                 <LinkIcon
@@ -136,16 +173,6 @@ export default function SubmitPage() {
                   لینک باید شکل x.com/کاربر/status/شماره داشته باشد
                 </p>
               )}
-              <label className="text-sm font-medium mt-2">
-                لینک تصویر اثر <span className="text-muted-foreground">(اختیاری — برای بخش هنری)</span>
-              </label>
-              <input
-                dir="ltr"
-                className="glass-input text-left"
-                placeholder="https://..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
               <LiquidButton
                 variant="primary"
                 className="mt-3 w-full"
@@ -168,35 +195,50 @@ export default function SubmitPage() {
               <h1 className="text-xl font-black text-center">
                 این پست در کدام بخش شرکت می‌کند؟
               </h1>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
-                  onClick={() => startSave("art")}
+                  onClick={() => chooseCategory("art")}
                   className={cn(
-                    "glass-panel p-6 flex flex-col items-center gap-3 cursor-pointer",
+                    "glass-panel p-5 flex flex-col items-center gap-2 cursor-pointer",
                     "hover:border-pink-400/50 hover:-translate-y-1 transition-all duration-300"
                   )}
                 >
-                  <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-pink-500/15 text-pink-400">
-                    <Palette size={26} />
+                  <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-pink-500/15 text-pink-400">
+                    <Palette size={24} />
                   </span>
-                  <span className="font-bold">اثر هنری</span>
-                  <span className="text-muted-foreground text-xs text-center leading-6">
-                    نقاشی، طراحی، فن‌آرت و هر اثر تصویری
+                  <span className="font-bold text-sm">اثر هنری</span>
+                  <span className="text-muted-foreground text-[11px] text-center leading-5">
+                    توییت + آپلود فایل اثر
                   </span>
                 </button>
                 <button
-                  onClick={() => startSave("text")}
+                  onClick={() => chooseCategory("text")}
                   className={cn(
-                    "glass-panel p-6 flex flex-col items-center gap-3 cursor-pointer",
+                    "glass-panel p-5 flex flex-col items-center gap-2 cursor-pointer",
                     "hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
                   )}
                 >
-                  <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-500/15 text-cyan-400">
-                    <FileText size={26} />
+                  <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-500/15 text-cyan-400">
+                    <FileText size={24} />
                   </span>
-                  <span className="font-bold">محتوای متنی</span>
-                  <span className="text-muted-foreground text-xs text-center leading-6">
-                    ترد، مقاله، آموزش و هر محتوای نوشتاری
+                  <span className="font-bold text-sm">محتوای متنی</span>
+                  <span className="text-muted-foreground text-[11px] text-center leading-5">
+                    فقط لینک توییت کافیست
+                  </span>
+                </button>
+                <button
+                  onClick={() => chooseCategory("video")}
+                  className={cn(
+                    "glass-panel p-5 flex flex-col items-center gap-2 cursor-pointer",
+                    "hover:border-violet-400/50 hover:-translate-y-1 transition-all duration-300"
+                  )}
+                >
+                  <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-400">
+                    <Clapperboard size={24} />
+                  </span>
+                  <span className="font-bold text-sm">ویدیویی</span>
+                  <span className="text-muted-foreground text-[11px] text-center leading-5">
+                    توییت + آپلود ویدیو — فعلا بدون برنده هفتگی
                   </span>
                 </button>
               </div>
@@ -207,6 +249,76 @@ export default function SubmitPage() {
               >
                 بازگشت و ویرایش لینک
               </button>
+            </motion.div>
+          )}
+
+          {phase === "file" && category && category !== "text" && (
+            <motion.div
+              key="file"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex flex-col gap-4"
+            >
+              <h1 className="text-xl font-black text-center">
+                {category === "art" ? "فایل اثرت را آپلود کن" : "فایل ویدیوت را آپلود کن"}
+              </h1>
+              <p className="text-muted-foreground text-sm text-center leading-7">
+                {CATEGORY_INFO[category].fileLabel}
+              </p>
+              {category === "video" && (
+                <p className="text-center text-xs text-amber-400 leading-6">
+                  بخش ویدیو تازه راه افتاده و تعداد پست‌هایش کم است — فعلا برنده
+                  هفتگی ندارد ولی در گالری نمایش داده می‌شود.
+                </p>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={CATEGORY_INFO[category].accept}
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "glass-panel border-dashed p-8 flex flex-col items-center gap-3 cursor-pointer",
+                  "hover:border-primary/50 transition-colors"
+                )}
+              >
+                <Upload size={28} className="text-primary" />
+                {file ? (
+                  <span className="text-sm font-bold break-all text-center" dir="ltr">
+                    {file.name}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    برای انتخاب فایل کلیک کن
+                  </span>
+                )}
+              </button>
+              {file && category === "art" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="پیش‌نمایش اثر"
+                  className="rounded-xl max-h-56 object-contain mx-auto"
+                />
+              )}
+              {error && <p className="text-center text-sm text-destructive">{error}</p>}
+              <div className="flex gap-2 mt-2">
+                <LiquidButton className="flex-1" onClick={() => setPhase("category")}>
+                  بازگشت
+                </LiquidButton>
+                <LiquidButton
+                  variant="primary"
+                  className="flex-1"
+                  disabled={!file}
+                  onClick={() => file && startSave(category, file)}
+                >
+                  ثبت پست
+                </LiquidButton>
+              </div>
             </motion.div>
           )}
 
@@ -226,7 +338,7 @@ export default function SubmitPage() {
                 gaugeSecondaryColor="rgba(255,255,255,0.08)"
               />
               <p className="text-muted-foreground text-sm">
-                در حال دریافت و ذخیره پست...
+                در حال آپلود و ذخیره پست...
               </p>
             </motion.div>
           )}
@@ -240,10 +352,23 @@ export default function SubmitPage() {
             >
               <CheckCircle2 size={56} className="text-emerald-400" />
               <h2 className="text-xl font-black">پستت ثبت شد!</h2>
-              <p className="text-muted-foreground text-sm leading-7">
-                پست تو در بخش {category === "art" ? "هنری" : "متنی"} این هفته شرکت
-                داده شد. اگر لینک را اشتباه گذاشتی، از پروفایلت می‌توانی اصلاحش کنی.
-              </p>
+              {category === "video" ? (
+                <p className="text-muted-foreground text-sm leading-7">
+                  ویدیوت در گالری ویدیو ثبت شد. این بخش فعلا مسابقه هفتگی ندارد.
+                </p>
+              ) : inContest ? (
+                <p className="text-muted-foreground text-sm leading-7">
+                  پست تو در بخش {category === "art" ? "هنری" : "متنی"}{" "}
+                  <b className="text-emerald-400">وارد رای‌گیری این هفته شد</b>. اگر
+                  لینک را اشتباه گذاشتی، از پروفایلت اصلاحش کن.
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm leading-7">
+                  پستت در گالری ثبت شد، ولی چون توییتش مال قبل از این هفته است،
+                  <b className="text-amber-400"> وارد رای‌گیری این هفته نمی‌شود</b>.
+                  برای مسابقه، پست جدید همین هفته‌ات را ثبت کن.
+                </p>
+              )}
               <div className="flex gap-2">
                 <LiquidButton variant="primary" onClick={() => router.push("/profile")}>
                   مشاهده پروفایل
@@ -251,8 +376,8 @@ export default function SubmitPage() {
                 <LiquidButton
                   onClick={() => {
                     setTweetUrl("");
-                    setImageUrl("");
                     setCategory(null);
+                    setFile(null);
                     setProgress(0);
                     setPhase("form");
                   }}

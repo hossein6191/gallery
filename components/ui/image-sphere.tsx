@@ -64,6 +64,7 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
   className = "",
 }) => {
   const [isMounted, setIsMounted] = useState(false);
+  const [inView, setInView] = useState(true);
   const [rotation, setRotation] = useState({ x: 15, y: 15, z: 0 });
   const [velocity, setVelocity] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -261,16 +262,29 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
   useEffect(() => setIsMounted(true), []);
   useEffect(() => setImagePositions(generateSpherePositions()), [generateSpherePositions]);
 
+  // Pause the animation loop entirely while the sphere is scrolled offscreen —
+  // a 60fps re-render for something invisible wastes battery and jank budget.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isMounted]);
+
   useEffect(() => {
     const animate = () => {
       updateMomentum();
       animationFrame.current = requestAnimationFrame(animate);
     };
-    if (isMounted) animationFrame.current = requestAnimationFrame(animate);
+    if (isMounted && inView) animationFrame.current = requestAnimationFrame(animate);
     return () => {
       if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
     };
-  }, [isMounted, updateMomentum]);
+  }, [isMounted, inView, updateMomentum]);
 
   useEffect(() => {
     if (!isMounted) return;

@@ -39,14 +39,15 @@ export default function MembersPage() {
         </p>
       </div>
 
-      <div className="relative max-w-md mx-auto w-full">
+      <div className="relative max-w-md mx-auto w-full" dir="ltr">
         <Search
           size={16}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
         />
         <input
-          className="glass-input pr-11"
-          placeholder="جستجو با یوزرنیم توییتر یا اسم..."
+          dir="ltr"
+          className="glass-input pl-11 text-left"
+          placeholder="@username یا اسم..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
