@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
-import { isVotingOpen, votingDayNameFa } from "@/lib/week";
+import { isVotingOpen, votingDayNameFa, currentWeekRangeFa } from "@/lib/week";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -20,6 +20,7 @@ export async function GET() {
     open: isVotingOpen(),
     votingDay: votingDayNameFa(),
     week,
+    range: currentWeekRangeFa(),
     myVotes,
   });
 }

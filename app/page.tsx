@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
-import { votingDayNameFa } from "@/lib/week";
+import { votingDayNameFa, currentWeekRangeFa } from "@/lib/week";
 import { faNum } from "@/lib/utils";
 import { MemberSphere } from "@/components/member-sphere";
 import { ElasticGallery, type ElasticItem } from "@/components/ui/elastic-gallery";
@@ -51,7 +51,8 @@ export default function HomePage() {
     id: String(r.id),
     title: r.display_name ?? "",
     category: "هنری",
-    src: r.image_url,
+    // the uploaded artwork is the cover; fall back to the tweet's image
+    src: (r.file_type === "image" && r.file_url) || r.image_url,
     alt: r.tweet_text ?? "اثر هنری",
     href: r.tweet_url,
     handle: r.twitter_handle,
@@ -82,7 +83,10 @@ export default function HomePage() {
           </LiquidButton>
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground mt-2">
-          <span>هفته جاری: <b className="text-foreground">هفته {faNum(week)}</b></span>
+          <span>
+            هفته جاری: <b className="text-foreground">هفته {faNum(week)}</b>{" "}
+            <span className="text-xs">({currentWeekRangeFa()})</span>
+          </span>
           <span>اعضا: <b className="text-foreground">{faNum(memberCount)} نفر</b></span>
           <span>
             رای‌گیری: <b className="text-foreground">هر {votingDayNameFa()}</b>
@@ -90,8 +94,8 @@ export default function HomePage() {
         </div>
         <div className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/25 px-5 py-2.5 text-xs text-foreground/85">
           <CalendarClock size={14} className="text-primary shrink-0" />
-          پست‌های <b>جدید همین هفته‌ات</b> را ثبت کن — تاریخ توییت بررسی می‌شود و
-          فقط پست‌های همین هفته وارد رای‌گیری می‌شوند.
+          پست‌های <b>جدیدت</b> را ثبت کن — تاریخ توییت بررسی می‌شود و فقط توییت‌های
+          حداکثر <b>۷ روز</b> اخیر وارد رای‌گیری این هفته می‌شوند.
         </div>
       </section>
 

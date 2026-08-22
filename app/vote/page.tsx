@@ -11,6 +11,7 @@ type VoteStatus = {
   open: boolean;
   votingDay: string;
   week: number;
+  range: string;
   myVotes: { category: string; submission_id: number }[];
 };
 
@@ -74,14 +75,15 @@ export default function VotePage() {
           {status.open ? <Vote size={28} /> : <Lock size={26} />}
         </span>
         <h1 className="font-nastaliq text-3xl font-black">رای‌گیری هفته {faNum(status.week)}</h1>
+        <p className="text-sm text-foreground/80 -mt-1">{status.range}</p>
         {status.open ? (
           <p className="text-emerald-400 text-sm font-bold">
             رای‌گیری باز است! در هر بخش به یک پست رای بده.
           </p>
         ) : null}
         <p className="text-muted-foreground text-xs max-w-md leading-6">
-          هفته از شنبه شروع می‌شود؛ فقط پست‌هایی که همین هفته ثبت شده‌اند (و
-          توییتشان قدیمی‌تر از ۷ روز نیست) اینجا می‌آیند — بخش ویدیو فعلا مسابقه
+          هفته به وقت ایران از شنبه تا جمعه است؛ پست‌هایی که این هفته ثبت شده‌اند و
+          توییتشان حداکثر ۷ روز قدمت دارد اینجا می‌آیند — بخش ویدیو فعلا مسابقه
           ندارد.
         </p>
         {!status.open && (

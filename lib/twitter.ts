@@ -113,19 +113,56 @@ async function fetchViaSyndication(tweetId: string): Promise<FetchedTweet | null
     const json = await res.json();
     if (!json || json.__typename !== "Tweet" || typeof json.text !== "string") return null;
 
-    const photos: { url?: string }[] = Array.isArray(json.photos) ? json.photos : [];
-    const media: { type?: string; media_url_https?: string }[] = Array.isArray(json.mediaDetails)
-      ? json.mediaDetails
-      : [];
-    const photoUrl =
-      photos[0]?.url ?? media.find((m) => m.type === "photo")?.media_url_https ?? null;
-    const poster: string | null = json.video?.poster ?? null;
-    const hasVideo = Boolean(json.video) || media.some((m) => m.type === "video" || m.type === "animated_gif");
+    const mediaOf = (t: Record<string, unknown> | undefined) => {
+      if (!t) return { photo: null as string | null, poster: null as string | null, video: false };
+      const photos = (Array.isArray(t.photos) ? t.photos : []) as { url?: string }[];
+      const details = (Array.isArray(t.mediaDetails) ? t.mediaDetails : []) as {
+        type?: string;
+        media_url_https?: string;
+      }[];
+      const video = t.video as { poster?: string } | undefined;
+      return {
+        photo: photos[0]?.url ?? details.find((m) => m.type === "photo")?.media_url_https ?? null,
+        poster: video?.poster ?? null,
+        video: Boolean(video) || details.some((m) => m.type === "video" || m.type === "animated_gif"),
+      };
+    };
+
+    const own = mediaOf(json);
+    const quoted = mediaOf(json.quoted_tweet);
+    // X Articles: the tweet text is only a link; the cover + preview live under `article`
+    const article = json.article as
+      | {
+          title?: string;
+          preview_text?: string;
+          cover_media?: { media_info?: { original_img_url?: string } };
+        }
+      | undefined;
+    const articleCover = article?.cover_media?.media_info?.original_img_url ?? null;
+
+    // long tweets carry the full text in note_tweet
+    let text = cleanTweetText(
+      typeof json.note_tweet?.text === "string" ? json.note_tweet.text : json.text
+    );
+    if (!text && article) {
+      text = [article.title, article.preview_text].filter(Boolean).join(" — ").trim();
+    }
+    if (!text && json.quoted_tweet?.text) {
+      text = cleanTweetText(String(json.quoted_tweet.text));
+    }
+
+    const imageUrl = own.photo ?? own.poster ?? articleCover ?? quoted.photo ?? quoted.poster;
+    const mediaType: FetchedTweet["mediaType"] =
+      own.photo || articleCover || quoted.photo
+        ? "photo"
+        : own.video || quoted.video
+          ? "video"
+          : null;
 
     return {
-      text: cleanTweetText(json.text),
-      imageUrl: photoUrl ?? poster,
-      mediaType: photoUrl ? "photo" : hasVideo ? "video" : null,
+      text: text || null,
+      imageUrl,
+      mediaType,
       createdAt: typeof json.created_at === "string" ? json.created_at : null,
       authorHandle: json.user?.screen_name ?? null,
     };

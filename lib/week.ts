@@ -56,6 +56,20 @@ export function weekNumberFor(launchWeekStart: number, date = new Date()): numbe
   return Math.max(1, Math.floor(diff / (7 * DAY)) + 1);
 }
 
+/** Current Tehran week as a Persian-calendar range, e.g. «شنبه ۳۱ مرداد تا جمعه ۶ شهریور». */
+export function currentWeekRangeFa(date = new Date()): string {
+  const DAY = 86_400_000;
+  const start = currentWeekStartStamp(date);
+  const end = start + 6 * DAY;
+  // stamps are UTC-midnight of the Tehran calendar date, so format in UTC
+  const fmt = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+  });
+  return `شنبه ${fmt.format(new Date(start))} تا جمعه ${fmt.format(new Date(end))}`;
+}
+
 export function votingWeekday(): number {
   const name = (process.env.VOTE_WEEKDAY || "friday").toLowerCase();
   return WEEKDAY_INDEX[name] ?? WEEKDAY_INDEX.friday;
