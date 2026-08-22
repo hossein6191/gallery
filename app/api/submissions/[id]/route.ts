@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { getDb, type SubmissionRow } from "@/lib/db";
+import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { fetchTweet, isTweetUrl } from "@/lib/twitter";
 
-// Members may only fix a wrong tweet link on their own submission.
+const MAX_TWEET_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Members may fix a wrong tweet link on their own submission — or re-save the
+// same link to refresh the cover/text from the tweet.
 export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -32,12 +35,36 @@ export async function PATCH(
   const fetched = await fetchTweet(tweetUrl);
   const tweetId = tweetUrl.match(/status(?:es)?\/(\d+)/)?.[1] ?? null;
 
+  // Re-evaluate contest eligibility for the (possibly new) tweet. A post can
+  // drop out of the contest if the tweet is too old, or come back in if it was
+  // excluded before; video never competes.
+  let weekNumber = row.week_number;
+  if (row.category === "video") {
+    weekNumber = 0;
+  } else if (fetched?.createdAt) {
+    const tweetTime = new Date(fetched.createdAt).getTime();
+    if (!Number.isNaN(tweetTime) && tweetTime < Date.now() - MAX_TWEET_AGE_MS) {
+      weekNumber = 0;
+    } else if (row.week_number === 0) {
+      weekNumber = currentWeekNumber();
+    }
+  }
+
   db.prepare(
     `UPDATE submissions
      SET tweet_url = ?, tweet_id = ?, tweet_text = COALESCE(?, tweet_text),
-         image_url = COALESCE(?, image_url), edited = 1
+         image_url = COALESCE(?, image_url), tweet_date = COALESCE(?, tweet_date),
+         week_number = ?, edited = 1
      WHERE id = ?`
-  ).run(tweetUrl, tweetId, fetched?.text ?? null, fetched?.imageUrl ?? null, row.id);
+  ).run(
+    tweetUrl,
+    tweetId,
+    fetched?.text ?? null,
+    fetched?.imageUrl ?? null,
+    fetched?.createdAt ?? null,
+    weekNumber,
+    row.id
+  );
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, inContest: weekNumber > 0 });
 }

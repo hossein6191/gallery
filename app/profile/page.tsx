@@ -125,18 +125,38 @@ export default function ProfilePage() {
                   display_name: user.displayName,
                 }}
                 action={
-                  <button
-                    onClick={() => {
-                      setEditing(item);
-                      setNewUrl(item.tweet_url);
-                      setEditError("");
-                    }}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
-                    title="اصلاح لینک اشتباه"
-                  >
-                    <EditIcon size={14} />
-                    اصلاح لینک
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        item.week_number > 0
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : "bg-white/10 text-muted-foreground"
+                      }`}
+                      title={
+                        item.week_number > 0
+                          ? "در رای‌گیری این هفته شرکت دارد"
+                          : "فقط در گالری — در مسابقه نیست"
+                      }
+                    >
+                      {item.week_number > 0
+                        ? `مسابقه هفته ${faNum(item.week_number)}`
+                        : item.category === "video"
+                          ? "بدون مسابقه"
+                          : "فقط گالری"}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setEditing(item);
+                        setNewUrl(item.tweet_url);
+                        setEditError("");
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      title="اصلاح لینک یا بروزرسانی کاور و متن"
+                    >
+                      <EditIcon size={14} />
+                      اصلاح لینک
+                    </button>
+                  </div>
                 }
               />
             ))}
@@ -171,8 +191,8 @@ export default function ProfilePage() {
               </button>
             </div>
             <p className="text-muted-foreground text-xs leading-6 mb-4">
-              فقط اگر لینک را اشتباه گذاشته‌ای اینجا اصلاحش کن — متن و تصویر پست
-              دوباره دریافت می‌شود.
+              اگر لینک را اشتباه گذاشته‌ای اینجا اصلاحش کن. همان لینک را دوباره
+              ذخیره کنی هم متن و کاور پست از نو دریافت می‌شود.
             </p>
             <input
               dir="ltr"

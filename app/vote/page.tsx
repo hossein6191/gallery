@@ -80,8 +80,9 @@ export default function VotePage() {
           </p>
         ) : null}
         <p className="text-muted-foreground text-xs max-w-md leading-6">
-          فقط پست‌هایی که همین هفته توییت شده‌اند اینجا می‌آیند — بخش ویدیو فعلا
-          مسابقه ندارد.
+          هفته از شنبه شروع می‌شود؛ فقط پست‌هایی که همین هفته ثبت شده‌اند (و
+          توییتشان قدیمی‌تر از ۷ روز نیست) اینجا می‌آیند — بخش ویدیو فعلا مسابقه
+          ندارد.
         </p>
         {!status.open && (
           <p className="text-muted-foreground max-w-md leading-8">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { faNum } from "@/lib/utils";
-import { ShieldAlert, Trash2, Loader2, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Trash2, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 
 export default function AdminPage() {
   const [key, setKey] = useState("");
@@ -11,6 +11,31 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Record<string, number> | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMsg, setRefreshMsg] = useState("");
+
+  const refresh = async () => {
+    setRefreshing(true);
+    setRefreshMsg("");
+    setError("");
+    try {
+      const res = await fetch("/api/admin/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error ?? "خطایی رخ داد");
+      else
+        setRefreshMsg(
+          `${faNum(data.updated)} پست بروزرسانی شد` +
+            (data.failed ? ` (${faNum(data.failed)} پست قابل دریافت نبود)` : "")
+        );
+    } catch {
+      setError("ارتباط با سرور برقرار نشد");
+    }
+    setRefreshing(false);
+  };
 
   const reset = async () => {
     setLoading(true);
@@ -72,6 +97,22 @@ export default function AdminPage() {
                 setConfirming(false);
               }}
             />
+            <LiquidButton
+              className="w-full"
+              disabled={!key || refreshing}
+              onClick={refresh}
+            >
+              {refreshing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <RefreshCw size={16} />
+              )}
+              بروزرسانی کاور و متن همه پست‌ها
+            </LiquidButton>
+            {refreshMsg && (
+              <p className="text-center text-xs text-emerald-400">{refreshMsg}</p>
+            )}
+            <div className="border-t border-white/10 my-1" />
             {!confirming ? (
               <LiquidButton
                 className="w-full text-destructive"

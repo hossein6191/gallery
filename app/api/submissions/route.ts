@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { getDb, currentWeekNumber, uploadsDir, type SubmissionRow } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { fetchTweet, isTweetUrl } from "@/lib/twitter";
-import { currentWeekStartStamp } from "@/lib/week";
+
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -50,6 +50,7 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
 const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // 60MB
+const MAX_TWEET_AGE_MS = 7 * 24 * 60 * 60 * 1000; // tweets older than a week stay gallery-only
 
 const EXT_BY_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -143,14 +144,14 @@ export async function POST(req: Request) {
   const fetched = await fetchTweet(tweetUrl);
   const tweetId = tweetUrl.match(/status(?:es)?\/(\d+)/)?.[1] ?? null;
 
-  // Contest eligibility: only tweets posted during the current (Tehran) week
-  // enter this week's voting. Older tweets still live in the gallery.
+  // Contest eligibility: only tweets posted within the last 7 days enter the
+  // current week's voting. Older tweets still live in the gallery.
   // If the tweet date can't be determined, be lenient and allow it in.
   let weekNumber = currentWeekNumber();
   let inContest = true;
   if (fetched?.createdAt) {
     const tweetTime = new Date(fetched.createdAt).getTime();
-    if (!Number.isNaN(tweetTime) && tweetTime < currentWeekStartStamp()) {
+    if (!Number.isNaN(tweetTime) && tweetTime < Date.now() - MAX_TWEET_AGE_MS) {
       weekNumber = 0;
       inContest = false;
     }

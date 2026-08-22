@@ -36,7 +36,9 @@ export function TweetCard({
   const chip = CATEGORY_CHIP[item.category];
   // uploaded file wins; otherwise the image fetched from the tweet
   const showVideo = item.file_type === "video" && item.file_url;
-  const showImage = !showVideo && (item.file_url || item.image_url);
+  const coverUrl =
+    item.file_type === "image" && item.file_url ? item.file_url : item.image_url;
+  const showImage = !showVideo && Boolean(coverUrl);
 
   return (
     <div
@@ -55,13 +57,30 @@ export function TweetCard({
         />
       )}
       {showImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={(item.file_url || item.image_url)!}
-          alt={item.tweet_text ?? "اثر"}
-          className="w-full aspect-[4/3] object-cover"
-          loading="lazy"
-        />
+        // Whole cover always visible (object-contain); a blurred copy fills
+        // the box behind it so odd aspect ratios never leave empty bars.
+        <div
+          className={cn(
+            "relative w-full overflow-hidden bg-black/30",
+            item.category === "art" ? "aspect-[4/3]" : "aspect-[16/10]"
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverUrl!}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-50"
+            loading="lazy"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverUrl!}
+            alt={item.tweet_text ?? "کاور پست"}
+            className="relative w-full h-full object-contain"
+            loading="lazy"
+          />
+        </div>
       )}
 
       <div className="p-4 flex flex-col gap-3 flex-1">

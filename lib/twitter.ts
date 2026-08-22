@@ -75,6 +75,65 @@ async function fetchViaApi(tweetId: string, token: string): Promise<FetchedTweet
   };
 }
 
+// Twitter's public syndication endpoint (what embedded tweets use). No API
+// key, no quota — returns text, date, photos and the video poster.
+const SYNDICATION_FEATURES = [
+  "tfw_timeline_list:",
+  "tfw_follower_count_sunset:true",
+  "tfw_tweet_edit_backend:on",
+  "tfw_refsrc_session:on",
+  "tfw_fosnr_soft_interventions_enabled:on",
+  "tfw_show_birdwatch_pivots_enabled:on",
+  "tfw_show_business_verified_badge:on",
+  "tfw_duplicate_scribes_to_settings:on",
+  "tfw_use_profile_image_shape_enabled:on",
+  "tfw_show_blue_verified_badge:on",
+  "tfw_legacy_timeline_sunset:true",
+  "tfw_show_gov_verified_badge:on",
+  "tfw_show_business_affiliate_badge:on",
+  "tfw_tweet_edit_frontend:on",
+].join(";");
+
+function syndicationToken(id: string): string {
+  return ((Number(id) / 1e15) * Math.PI).toString(36).replace(/(0+|\.)/g, "");
+}
+
+async function fetchViaSyndication(tweetId: string): Promise<FetchedTweet | null> {
+  try {
+    const url = new URL("https://cdn.syndication.twimg.com/tweet-result");
+    url.searchParams.set("id", tweetId);
+    url.searchParams.set("lang", "en");
+    url.searchParams.set("features", SYNDICATION_FEATURES);
+    url.searchParams.set("token", syndicationToken(tweetId));
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; GenLayerGallery/1.0)" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json || json.__typename !== "Tweet" || typeof json.text !== "string") return null;
+
+    const photos: { url?: string }[] = Array.isArray(json.photos) ? json.photos : [];
+    const media: { type?: string; media_url_https?: string }[] = Array.isArray(json.mediaDetails)
+      ? json.mediaDetails
+      : [];
+    const photoUrl =
+      photos[0]?.url ?? media.find((m) => m.type === "photo")?.media_url_https ?? null;
+    const poster: string | null = json.video?.poster ?? null;
+    const hasVideo = Boolean(json.video) || media.some((m) => m.type === "video" || m.type === "animated_gif");
+
+    return {
+      text: cleanTweetText(json.text),
+      imageUrl: photoUrl ?? poster,
+      mediaType: photoUrl ? "photo" : hasVideo ? "video" : null,
+      createdAt: typeof json.created_at === "string" ? json.created_at : null,
+      authorHandle: json.user?.screen_name ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const MONTHS =
   "(January|February|March|April|May|June|July|August|September|October|November|December)";
 
@@ -114,10 +173,18 @@ async function fetchViaOEmbed(tweetUrl: string): Promise<FetchedTweet | null> {
 export async function fetchTweet(tweetUrl: string): Promise<FetchedTweet | null> {
   const id = extractTweetId(tweetUrl);
   if (!id) return null;
+
+  // 1) free syndication endpoint (covers + date, zero quota)
+  const viaSyndication = await fetchViaSyndication(id);
+  if (viaSyndication) return viaSyndication;
+
+  // 2) official API when a token is configured
   const token = process.env.TWITTER_BEARER_TOKEN;
   if (token) {
     const viaApi = await fetchViaApi(id, token);
     if (viaApi) return viaApi;
   }
+
+  // 3) oEmbed — text + date only
   return fetchViaOEmbed(tweetUrl);
 }
