@@ -29,6 +29,7 @@ export default function AdminPage() {
       else
         setRefreshMsg(
           `${faNum(data.updated)} پست بروزرسانی شد` +
+            (data.reinstated ? `، ${faNum(data.reinstated)} پست به مسابقه این هفته برگشت` : "") +
             (data.failed ? ` (${faNum(data.failed)} پست قابل دریافت نبود)` : "")
         );
     } catch {
