@@ -39,6 +39,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ posts: rows });
   }
 
+  // Full voter audit: who voted for which post, with the voter's join date so
+  // freshly-created fake accounts stand out.
+  if (action === "votes") {
+    const rows = db
+      .prepare(
+        `SELECT v.id, v.week_number, v.category, v.created_at AS voted_at,
+                s.id AS submission_id, s.tweet_url, s.tweet_text,
+                au.twitter_handle AS author_handle, au.display_name AS author_name,
+                vu.twitter_handle AS voter_handle, vu.display_name AS voter_name,
+                vu.discord_username AS voter_discord, vu.created_at AS voter_joined
+         FROM votes v
+         JOIN submissions s ON s.id = v.submission_id
+         JOIN users au ON au.id = s.user_id
+         JOIN users vu ON vu.id = v.user_id
+         ORDER BY v.week_number DESC, s.id ASC, v.created_at ASC
+         LIMIT 1000`
+      )
+      .all();
+    return NextResponse.json({ votes: rows });
+  }
+
   if (action === "delete") {
     const id = Number(body?.id);
     const row = db.prepare("SELECT * FROM submissions WHERE id = ?").get(id) as

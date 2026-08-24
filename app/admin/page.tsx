@@ -12,6 +12,7 @@ import {
   ListFilter,
   ExternalLink,
   Search,
+  Vote,
 } from "lucide-react";
 
 type AdminPost = {
@@ -35,6 +36,35 @@ const CAT_LABEL: Record<AdminPost["category"], string> = {
   video: "ویدیویی",
 };
 
+type AdminVote = {
+  id: number;
+  week_number: number;
+  category: "art" | "text";
+  voted_at: string;
+  submission_id: number;
+  tweet_url: string;
+  tweet_text: string | null;
+  author_handle: string;
+  author_name: string;
+  voter_handle: string;
+  voter_name: string;
+  voter_discord: string;
+  voter_joined: string;
+};
+
+// SQLite stores datetime('now') in UTC without a zone marker
+function faDate(sqliteUtc: string): string {
+  const d = new Date(sqliteUtc.replace(" ", "T") + "Z");
+  if (Number.isNaN(d.getTime())) return sqliteUtc;
+  return new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+    timeZone: "Asia/Tehran",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
 export default function AdminPage() {
   const [key, setKey] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -51,6 +81,10 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [postMsg, setPostMsg] = useState("");
+
+  // voter audit
+  const [votes, setVotes] = useState<AdminVote[] | null>(null);
+  const [votesLoading, setVotesLoading] = useState(false);
 
   const call = async (url: string, payload: Record<string, unknown>) => {
     const res = await fetch(url, {
@@ -105,6 +139,18 @@ export default function AdminPage() {
       setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
     }
     setPostsLoading(false);
+  };
+
+  const loadVotes = async () => {
+    setVotesLoading(true);
+    setError("");
+    try {
+      const data = await call("/api/admin/posts", { action: "votes" });
+      setVotes(data.votes);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
+    }
+    setVotesLoading(false);
   };
 
   const deletePost = async (id: number) => {
@@ -164,6 +210,11 @@ export default function AdminPage() {
         <LiquidButton className="w-full" disabled={!key || postsLoading} onClick={loadPosts}>
           {postsLoading ? <Loader2 size={16} className="animate-spin" /> : <ListFilter size={16} />}
           مدیریت پست‌ها (نمایش لیست)
+        </LiquidButton>
+
+        <LiquidButton className="w-full" disabled={!key || votesLoading} onClick={loadVotes}>
+          {votesLoading ? <Loader2 size={16} className="animate-spin" /> : <Vote size={16} />}
+          نمایش رای‌ها (چه کسی به چه کسی)
         </LiquidButton>
 
         <LiquidButton className="w-full" disabled={!key || refreshing} onClick={refresh}>
@@ -322,6 +373,91 @@ export default function AdminPage() {
                 );
               })}
             </ul>
+          )}
+        </div>
+      )}
+
+      {/* ---- voter audit ---- */}
+      {votes && (
+        <div className="glass-panel w-full max-w-3xl p-6 flex flex-col gap-4">
+          <h2 className="font-bold">
+            رای‌ها <span className="text-muted-foreground text-sm">({faNum(votes.length)})</span>
+          </h2>
+          <p className="text-muted-foreground text-xs leading-6">
+            فقط اعضای ثبت‌نام‌شده می‌توانند رای بدهند (هر عضو در هر بخش، هر هفته یک
+            رای). تاریخ عضویت رای‌دهنده را نگاه کن — اکانتی که همان روز رای‌گیری
+            ساخته شده مشکوک است.
+          </p>
+          {votes.length === 0 ? (
+            <p className="text-center text-muted-foreground text-sm py-6">
+              هنوز رایی ثبت نشده
+            </p>
+          ) : (
+            (() => {
+              const groups = new Map<number, AdminVote[]>();
+              for (const v of votes) {
+                if (!groups.has(v.submission_id)) groups.set(v.submission_id, []);
+                groups.get(v.submission_id)!.push(v);
+              }
+              return [...groups.values()].map((g) => {
+                const first = g[0];
+                return (
+                  <div key={first.submission_id} className="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-bold">
+                        پست #{faNum(first.submission_id)} از {first.author_name}
+                      </span>
+                      <span className="text-xs text-muted-foreground" dir="ltr">
+                        @{first.author_handle}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                          first.category === "art"
+                            ? "bg-pink-500/15 text-pink-400"
+                            : "bg-cyan-500/15 text-cyan-400"
+                        )}
+                      >
+                        {first.category === "art" ? "هنری" : "متنی"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        هفته {faNum(first.week_number)} · {faNum(g.length)} رای
+                      </span>
+                      <a
+                        href={first.tweet_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <ExternalLink size={13} />
+                      </a>
+                    </div>
+                    <ul className="mt-3 flex flex-col gap-1.5">
+                      {g.map((v) => (
+                        <li key={v.id} className="flex flex-wrap items-center gap-2 text-xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={avatarUrl(v.voter_handle)}
+                            alt=""
+                            className="w-5 h-5 rounded-full object-cover"
+                          />
+                          <span className="font-bold">{v.voter_name}</span>
+                          <span className="text-muted-foreground" dir="ltr">
+                            @{v.voter_handle}
+                          </span>
+                          <span className="text-muted-foreground" dir="ltr">
+                            {v.voter_discord}
+                          </span>
+                          <span className="text-muted-foreground">
+                            عضو از {faDate(v.voter_joined)} · رای در {faDate(v.voted_at)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              });
+            })()
           )}
         </div>
       )}

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
+import fs from "node:fs";
+import path from "node:path";
+import { getDb, currentWeekNumber, uploadsDir, type SubmissionRow } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { fetchTweet, isTweetUrl } from "@/lib/twitter";
 
@@ -67,4 +69,51 @@ export async function PATCH(
   );
 
   return NextResponse.json({ ok: true, inContest: weekNumber > 0 });
+}
+
+// Members may delete their own post. Hall-of-fame posts stay (the winners
+// archive is permanent) — only the admin can remove those.
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "اول باید وارد حسابت بشی" }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM submissions WHERE id = ?")
+    .get(Number(id)) as SubmissionRow | undefined;
+
+  if (!row || row.user_id !== user.id) {
+    return NextResponse.json({ error: "این پست متعلق به تو نیست" }, { status: 403 });
+  }
+
+  const won = db
+    .prepare("SELECT COUNT(*) AS c FROM winners WHERE submission_id = ?")
+    .get(row.id) as { c: number };
+  if (won.c > 0) {
+    return NextResponse.json(
+      { error: "این پست در تالار افتخارات ثبت شده و قابل حذف نیست" },
+      { status: 400 }
+    );
+  }
+
+  db.transaction(() => {
+    db.prepare("DELETE FROM votes WHERE submission_id = ?").run(row.id);
+    db.prepare("DELETE FROM submissions WHERE id = ?").run(row.id);
+  })();
+
+  if (row.file_url?.startsWith("/api/uploads/")) {
+    try {
+      fs.unlinkSync(path.join(uploadsDir(), path.basename(row.file_url)));
+    } catch {
+      // already gone
+    }
+  }
+
+  return NextResponse.json({ ok: true });
 }

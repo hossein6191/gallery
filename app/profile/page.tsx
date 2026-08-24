@@ -7,7 +7,7 @@ import { TweetCard, type SubmissionItem } from "@/components/tweet-card";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { EditIcon } from "@/components/ui/edit-icon";
 import { avatarUrl, twitterProfileUrl, faNum } from "@/lib/utils";
-import { ExternalLink, X, Loader2 } from "lucide-react";
+import { ExternalLink, X, Loader2, Trash2 } from "lucide-react";
 
 type User = {
   id: number;
@@ -25,6 +25,9 @@ export default function ProfilePage() {
   const [newUrl, setNewUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState("");
+  const [deleting, setDeleting] = useState<SubmissionItem | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const load = useCallback(async () => {
     const me = await fetch("/api/auth/me").then((r) => r.json());
@@ -57,6 +60,21 @@ export default function ProfilePage() {
     }
     setEditing(null);
     setNewUrl("");
+    load();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const res = await fetch(`/api/submissions/${deleting.id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    setDeleteBusy(false);
+    if (!res.ok) {
+      setDeleteError(data.error ?? "خطایی رخ داد");
+      return;
+    }
+    setDeleting(null);
     load();
   };
 
@@ -156,6 +174,16 @@ export default function ProfilePage() {
                       <EditIcon size={14} />
                       اصلاح لینک
                     </button>
+                    <button
+                      onClick={() => {
+                        setDeleting(item);
+                        setDeleteError("");
+                      }}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      title="حذف این پست"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 }
               />
@@ -167,6 +195,46 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+
+      {deleting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => setDeleting(null)}
+        >
+          <div
+            className="glass-panel bg-card/95 max-w-sm w-full p-6 text-center animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-destructive/15 text-destructive mb-3">
+              <Trash2 size={22} />
+            </span>
+            <h3 className="font-bold text-lg">آیا مطمئن هستی؟</h3>
+            <p className="text-muted-foreground text-sm leading-7 mt-2">
+              این پست به همراه رای‌هایی که گرفته برای همیشه پاک می‌شود و قابل
+              بازگشت نیست.
+            </p>
+            {deleteError && (
+              <p className="mt-3 text-sm text-destructive">{deleteError}</p>
+            )}
+            <div className="flex gap-2 mt-5">
+              <LiquidButton className="flex-1" onClick={() => setDeleting(null)}>
+                انصراف
+              </LiquidButton>
+              <LiquidButton
+                className="flex-1 text-destructive"
+                disabled={deleteBusy}
+                onClick={confirmDelete}
+              >
+                {deleteBusy ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  "بله، پاک کن"
+                )}
+              </LiquidButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div
