@@ -58,7 +58,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-1">
           {LINKS.map((l) => (
             <Link
               key={l.href}
@@ -75,7 +75,7 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-2 shrink-0">
+        <div className="hidden lg:flex items-center gap-2 shrink-0">
           {!checked ? null : user ? (
             <>
               <LiquidButton size="sm" asChild>
@@ -114,7 +114,7 @@ export function Navbar() {
         </div>
 
         <button
-          className="md:hidden p-2 text-foreground"
+          className="lg:hidden p-2 text-foreground"
           onClick={() => setOpen(!open)}
           aria-label="منو"
         >
@@ -123,7 +123,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="md:hidden border-t border-white/5 px-4 py-4 flex flex-col gap-2 bg-background/95">
+        <div className="lg:hidden border-t border-white/5 px-4 py-4 flex flex-col gap-2 bg-background/95">
           {LINKS.map((l) => (
             <Link
               key={l.href}

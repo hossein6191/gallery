@@ -74,6 +74,13 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  // a touch starts undecided: a mostly-horizontal drag rotates the sphere,
+  // a mostly-vertical one belongs to the page so it can still scroll
+  const touchStart = useRef<{ x: number; y: number; decided: "rotate" | "scroll" | null }>({
+    x: 0,
+    y: 0,
+    decided: null,
+  });
   const animationFrame = useRef<number | null>(null);
 
   const actualSphereRadius = sphereRadius || containerSize * 0.5;
@@ -230,16 +237,29 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setIsDragging(true);
     setVelocity({ x: 0, y: 0 });
     lastMousePos.current = { x: touch.clientX, y: touch.clientY };
+    touchStart.current = { x: touch.clientX, y: touch.clientY, decided: null };
+    setIsDragging(true);
   }, []);
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
       if (!isDragging) return;
-      e.preventDefault();
       const touch = e.touches[0];
+
+      if (touchStart.current.decided === null) {
+        const totalX = Math.abs(touch.clientX - touchStart.current.x);
+        const totalY = Math.abs(touch.clientY - touchStart.current.y);
+        if (totalX < 6 && totalY < 6) return; // too small to tell yet
+        touchStart.current.decided = totalX > totalY ? "rotate" : "scroll";
+        if (touchStart.current.decided === "scroll") {
+          setIsDragging(false); // hand the gesture back to the page
+          return;
+        }
+      }
+
+      e.preventDefault();
       const deltaX = touch.clientX - lastMousePos.current.x;
       const deltaY = touch.clientY - lastMousePos.current.y;
       const rotationDelta = { x: -deltaY * dragSensitivity, y: deltaX * dragSensitivity };
@@ -332,7 +352,7 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
       <div
         ref={containerRef}
         className={`relative select-none cursor-grab active:cursor-grabbing ${className}`}
-        style={{ width: containerSize, height: containerSize }}
+        style={{ width: containerSize, height: containerSize, touchAction: "pan-y" }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
