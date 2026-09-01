@@ -27,7 +27,7 @@ const META = {
     desc: "ویدیوهای اعضای جامعه فارسی GenLayer",
     icon: Clapperboard,
     cls: "bg-violet-500/15 text-violet-400",
-    note: "این بخش تازه راه افتاده و فعلا برنده هفتگی ندارد — به‌زودی با بیشتر شدن ویدیوها مسابقه هم اضافه می‌شود.",
+    note: null as string | null,
   },
 } as const;
 

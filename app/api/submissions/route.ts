@@ -156,12 +156,6 @@ export async function POST(req: Request) {
       inContest = false;
     }
   }
-  // Video section has no weekly contest yet.
-  if (category === "video") {
-    weekNumber = 0;
-    inContest = false;
-  }
-
   let fileUrl: string | null = null;
   let fileType: "image" | "video" | null = null;
   if (file) {

@@ -363,13 +363,10 @@ export default function SubmitPage() {
             >
               <CheckCircle2 size={56} className="text-emerald-400" />
               <h2 className="text-xl font-black">پستت ثبت شد!</h2>
-              {category === "video" ? (
+              {inContest ? (
                 <p className="text-muted-foreground text-sm leading-7">
-                  ویدیوت در گالری ویدیو ثبت شد. این بخش فعلا مسابقه هفتگی ندارد.
-                </p>
-              ) : inContest ? (
-                <p className="text-muted-foreground text-sm leading-7">
-                  پست تو در بخش {category === "art" ? "هنری" : "متنی"}{" "}
+                  پست تو در بخش{" "}
+                  {category === "art" ? "هنری" : category === "video" ? "ویدیویی" : "متنی"}{" "}
                   <b className="text-emerald-400">وارد رای‌گیری این هفته شد</b>. اگر
                   لینک را اشتباه گذاشتی، از پروفایلت اصلاحش کن.
                 </p>

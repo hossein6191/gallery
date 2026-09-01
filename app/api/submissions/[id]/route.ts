@@ -39,11 +39,9 @@ export async function PATCH(
 
   // Re-evaluate contest eligibility for the (possibly new) tweet. A post can
   // drop out of the contest if the tweet is too old, or come back in if it was
-  // excluded before; video never competes.
+  // excluded before. All three sections are judged the same way.
   let weekNumber = row.week_number;
-  if (row.category === "video") {
-    weekNumber = 0;
-  } else if (fetched?.createdAt) {
+  if (fetched?.createdAt) {
     const tweetTime = new Date(fetched.createdAt).getTime();
     if (!Number.isNaN(tweetTime) && tweetTime < Date.now() - MAX_TWEET_AGE_MS) {
       weekNumber = 0;

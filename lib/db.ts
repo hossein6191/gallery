@@ -208,6 +208,12 @@ export type SubmissionRow = {
 };
 
 /** Finalize (top-3 per category) every past week that has votes but no winners yet. */
+/** The sections that run a weekly contest. Video joined art and text; keeping
+ *  this in one place is what stops it from being added to the vote and
+ *  forgotten in the leaderboard. */
+export const CONTEST_CATEGORIES = ["art", "text", "video"] as const;
+export type ContestCategory = (typeof CONTEST_CATEGORIES)[number];
+
 export function finalizePastWeeks(): void {
   const db = getDb();
   const current = currentWeekNumber();
@@ -233,7 +239,7 @@ export function finalizePastWeeks(): void {
   );
 
   for (const { week_number } of weeks) {
-    for (const category of ["art", "text"] as const) {
+    for (const category of CONTEST_CATEGORIES) {
       const rows = top.all(week_number, category) as {
         submission_id: number;
         user_id: number;

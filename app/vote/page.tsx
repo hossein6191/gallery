@@ -62,6 +62,7 @@ export default function VotePage() {
 
   const art = subs.filter((s) => s.category === "art");
   const text = subs.filter((s) => s.category === "text");
+  const video = subs.filter((s) => s.category === "video");
   const votedIds = new Set(status.myVotes.map((v) => v.submission_id));
 
   return (
@@ -78,13 +79,13 @@ export default function VotePage() {
         <p className="text-sm text-foreground/80 -mt-1">{status.range}</p>
         {status.open ? (
           <p className="text-emerald-400 text-sm font-bold">
-            رای‌گیری باز است! در هر بخش به یک پست رای بده.
+            رای‌گیری باز است! در هر سه بخش به یک پست رای بده.
           </p>
         ) : null}
         <p className="text-muted-foreground text-xs max-w-md leading-6">
           هفته به وقت ایران از شنبه تا جمعه است؛ پست‌هایی که این هفته ثبت شده‌اند و
-          توییتشان حداکثر ۷ روز قدمت دارد اینجا می‌آیند — بخش ویدیو فعلا مسابقه
-          ندارد.
+          توییتشان حداکثر ۷ روز قدمت دارد اینجا می‌آیند. هر سه بخش — هنری، متنی و
+          ویدیویی — مسابقه‌ی خودشان را دارند و در هرکدام یک رای داری.
         </p>
         {!status.open && (
           <p className="text-muted-foreground max-w-md leading-8">
@@ -106,6 +107,7 @@ export default function VotePage() {
       {[
         { key: "art", label: "بخش هنری", items: art },
         { key: "text", label: "بخش محتوای متنی", items: text },
+        { key: "video", label: "بخش ویدیویی", items: video },
       ].map((section) => (
         <section key={section.key} className="flex flex-col gap-4">
           <h2 className="text-xl font-bold">{section.label}</h2>

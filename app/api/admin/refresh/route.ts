@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     // Posts marked gallery-only under the old "since Saturday" rule come back
     // into the current week's contest if the tweet is within the 7-day window.
     let weekNumber = row.week_number;
-    if (row.category !== "video" && row.week_number === 0 && fetched.createdAt) {
+    if (row.week_number === 0 && fetched.createdAt) {
       const t = new Date(fetched.createdAt).getTime();
       if (!Number.isNaN(t) && t >= Date.now() - MAX_TWEET_AGE_MS) {
         weekNumber = week;

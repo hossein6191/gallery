@@ -2,7 +2,15 @@
 
 import { cn, faNum } from "@/lib/utils";
 import { LeaderboardPodium, type WinnerEntry } from "@/components/ui/leaderboard-podium";
-import { Palette, FileText } from "lucide-react";
+import { Palette, FileText, Video } from "lucide-react";
+
+/* Three sections, so the "is it art, otherwise text" boolean this used to run
+   on no longer says anything true. */
+const SECTION = {
+  art: { label: "بخش هنری", icon: Palette, tone: "bg-pink-500/15 text-pink-400" },
+  text: { label: "بخش محتوای متنی", icon: FileText, tone: "bg-cyan-500/15 text-cyan-400" },
+  video: { label: "بخش ویدیویی", icon: Video, tone: "bg-violet-500/15 text-violet-400" },
+} as const;
 
 export function LeaderboardCard({
   weekNumber,
@@ -11,27 +19,23 @@ export function LeaderboardCard({
   className,
 }: {
   weekNumber: number;
-  category: "art" | "text";
+  category: keyof typeof SECTION;
   entries: WinnerEntry[];
   className?: string;
 }) {
-  const isArt = category === "art";
+  const section = SECTION[category];
+  const Icon = section.icon;
   return (
     <div className={cn("glass-panel p-6", className)}>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span
-            className={cn(
-              "flex items-center justify-center w-9 h-9 rounded-xl",
-              isArt ? "bg-pink-500/15 text-pink-400" : "bg-cyan-500/15 text-cyan-400"
-            )}
+            className={cn("flex items-center justify-center w-9 h-9 rounded-xl", section.tone)}
           >
-            {isArt ? <Palette size={18} /> : <FileText size={18} />}
+            <Icon size={18} />
           </span>
           <div>
-            <h3 className="text-base font-bold">
-              {isArt ? "بخش هنری" : "بخش محتوای متنی"}
-            </h3>
+            <h3 className="text-base font-bold">{section.label}</h3>
             <p className="text-muted-foreground text-xs">برترین‌های این بخش</p>
           </div>
         </div>

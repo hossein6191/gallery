@@ -1,4 +1,5 @@
-import { getDb, finalizePastWeeks, currentWeekNumber } from "@/lib/db";
+import { getDb, finalizePastWeeks, currentWeekNumber, CONTEST_CATEGORIES,
+  type ContestCategory } from "@/lib/db";
 import { votingDayNameFa } from "@/lib/week";
 import { faNum } from "@/lib/utils";
 import { LeaderboardCard, type WinnerEntry } from "@/components/ui/leaderboard-card";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 type WinnerRow = {
   week_number: number;
-  category: "art" | "text";
+  category: ContestCategory;
   rank: number;
   votes: number;
   twitter_handle: string;
@@ -35,9 +36,14 @@ export default function WinnersPage() {
   const week = currentWeekNumber();
 
   // group by week, then category
-  const weeks = new Map<number, { art: WinnerEntry[]; text: WinnerEntry[] }>();
+  const empty = () =>
+    Object.fromEntries(CONTEST_CATEGORIES.map((c) => [c, [] as WinnerEntry[]])) as Record<
+      ContestCategory,
+      WinnerEntry[]
+    >;
+  const weeks = new Map<number, Record<ContestCategory, WinnerEntry[]>>();
   for (const r of rows) {
-    if (!weeks.has(r.week_number)) weeks.set(r.week_number, { art: [], text: [] });
+    if (!weeks.has(r.week_number)) weeks.set(r.week_number, empty());
     weeks.get(r.week_number)![r.category].push({
       rank: r.rank,
       displayName: r.display_name,
@@ -76,9 +82,15 @@ export default function WinnersPage() {
               <h2 className="text-lg font-bold text-muted-foreground">
                 هفته {faNum(weekNumber)}
               </h2>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <LeaderboardCard weekNumber={weekNumber} category="art" entries={cats.art} />
-                <LeaderboardCard weekNumber={weekNumber} category="text" entries={cats.text} />
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {CONTEST_CATEGORIES.map((c) => (
+                  <LeaderboardCard
+                    key={c}
+                    weekNumber={weekNumber}
+                    category={c}
+                    entries={cats[c]}
+                  />
+                ))}
               </div>
             </section>
           ))}

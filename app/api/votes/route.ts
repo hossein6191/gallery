@@ -48,12 +48,6 @@ export async function POST(req: Request) {
   if (!sub) {
     return NextResponse.json({ error: "پست پیدا نشد" }, { status: 404 });
   }
-  if (sub.category === "video") {
-    return NextResponse.json(
-      { error: "بخش ویدیو فعلاً مسابقه هفتگی ندارد" },
-      { status: 400 }
-    );
-  }
   if (sub.week_number !== week) {
     return NextResponse.json(
       { error: "فقط به پست‌هایی که همین هفته توییت شده‌اند می‌شود رای داد" },
