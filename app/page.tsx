@@ -3,6 +3,7 @@ import { getDb, currentWeekNumber, type SubmissionRow } from "@/lib/db";
 import { votingDayNameFa, currentWeekRangeFa } from "@/lib/week";
 import { faNum } from "@/lib/utils";
 import { MemberSphere } from "@/components/member-sphere";
+import { UnofficialNoticeBox } from "@/components/unofficial-notice";
 import { ElasticGallery, type ElasticItem } from "@/components/ui/elastic-gallery";
 import { TweetCard } from "@/components/tweet-card";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
@@ -98,6 +99,9 @@ export default function HomePage() {
           حداکثر <b>۷ روز</b> اخیر وارد رای‌گیری این هفته می‌شوند.
         </div>
       </section>
+
+      {/* Unofficial-project notice — same text as the first-visit modal */}
+      <UnofficialNoticeBox />
 
       {/* Art showcase */}
       <section className="flex flex-col gap-6">

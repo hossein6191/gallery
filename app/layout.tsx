@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Vazirmatn, Noto_Nastaliq_Urdu } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { AnimatedBackground } from "@/components/animated-background";
+import { UnofficialNoticeModal } from "@/components/unofficial-notice";
 import "./globals.css";
 
 const vazir = Vazirmatn({
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
       <body className={`${vazir.variable} ${nastaliq.variable} antialiased`}>
         <AnimatedBackground />
+        <UnofficialNoticeModal />
         <Navbar />
         <main className="mx-auto max-w-6xl px-4 pb-24">{children}</main>
         <footer className="border-t border-white/5 py-8">
