@@ -5,14 +5,35 @@ import { Info, X, ShieldOff, HeartHandshake, Eye, Trophy } from "lucide-react";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
 // Bump the version to show the notice again to everyone.
-const STORAGE_KEY = "gl_unofficial_notice_v1";
+const STORAGE_KEY = "gl_unofficial_notice_v2";
 
-const POINTS = [
+const HellishLink = () => (
+  <a
+    href="https://x.com/Hellishnum1"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="font-bold text-foreground hover:text-primary transition-colors"
+    dir="ltr"
+  >
+    Hellish
+  </a>
+);
+
+const POINTS: {
+  icon: typeof ShieldOff;
+  cls: string;
+  title: string;
+  body: React.ReactNode;
+}[] = [
   {
     icon: ShieldOff,
     cls: "bg-amber-500/15 text-amber-400",
     title: "این سایت غیررسمی است",
-    body: "یک پروژه مستقل که اعضای جامعه فارسی‌زبان GenLayer ساخته‌اند.",
+    body: (
+      <>
+        یک پروژه مستقل که <HellishLink /> برای جامعه فارسی‌زبان GenLayer ساخته است.
+      </>
+    ),
   },
   {
     icon: Info,
@@ -113,9 +134,10 @@ export function UnofficialNoticeModal() {
         <NoticeList />
 
         <p className="text-muted-foreground text-[11px] leading-5 mt-5 pt-4 border-t border-white/10" dir="ltr">
-          This is an unofficial, community-made gallery. It is not affiliated with the
-          official GenLayer team and has no connection to Discord winners, roles or the
-          official portal.
+          This is an unofficial gallery, built by Hellish (@Hellishnum1) for the
+          Persian-speaking GenLayer community. It is not affiliated with the official
+          GenLayer team and has no connection to Discord winners, roles or the official
+          portal.
         </p>
 
         <LiquidButton variant="primary" className="w-full mt-5" onClick={close}>
@@ -137,7 +159,7 @@ export function UnofficialNoticeBox() {
         <div>
           <h2 className="font-nastaliq text-xl font-bold">درباره این گالری</h2>
           <p className="text-muted-foreground text-xs">
-            غیررسمی، ساخته‌شده توسط اعضای جامعه
+            غیررسمی — ساخته‌شده توسط <span dir="ltr">Hellish</span> برای جامعه فارسی‌زبان
           </p>
         </div>
       </div>
