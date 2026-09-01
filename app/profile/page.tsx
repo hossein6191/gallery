@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { TweetCard, type SubmissionItem } from "@/components/tweet-card";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
@@ -17,7 +16,6 @@ type User = {
 };
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [checked, setChecked] = useState(false);
   const [subs, setSubs] = useState<SubmissionItem[]>([]);

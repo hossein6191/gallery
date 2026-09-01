@@ -47,6 +47,8 @@
 
 html {
   color-scheme: dark;
+  /* RTL pages shift sideways if anything overflows, so clip at the root too */
+  overflow-x: hidden;
 }
 
 body {
@@ -291,5 +293,13 @@ body {
   from { transform: scale(0.85); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Auth/submit steps animate with plain CSS: a JS animation runtime that
+   stalls must never be able to leave a form invisible. */
+.animate-step { animation: stepIn 0.32s ease-out both; }
+
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
 .animate-scale-in { animation: scaleIn 0.3s ease-out; }

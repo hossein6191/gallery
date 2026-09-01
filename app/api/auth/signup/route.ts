@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, logAuthEvent } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/auth";
 import { normalizeHandle } from "@/lib/utils";
 
@@ -55,5 +55,6 @@ export async function POST(req: Request) {
     discordUsername,
   };
   await createSession(user);
+  logAuthEvent({ kind: "signup", handle: user.twitterHandle, userId: user.id, req });
   return NextResponse.json({ user });
 }

@@ -69,6 +69,20 @@ function createDb(): Database.Database {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    -- Sign-ups, successful logins and failed attempts, for the admin page:
+    -- who got in with what device, and who is stuck outside.
+    CREATE TABLE IF NOT EXISTS auth_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      handle TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      reason TEXT,
+      ip TEXT,
+      user_agent TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_auth_events_created ON auth_events (created_at DESC);
   `);
 
   migrateSubmissions(db);
@@ -249,5 +263,37 @@ export function finalizePastWeeks(): void {
         insert.run(week_number, category, i + 1, r.submission_id, r.user_id, r.votes);
       });
     }
+  }
+}
+
+export type AuthEventKind =
+  | "signup"
+  | "login_success"
+  | "login_failed"
+  | "login_failed_no_user";
+
+/** Record a sign-up / login attempt. Never throws — logging must not break auth. */
+export function logAuthEvent(opts: {
+  kind: AuthEventKind;
+  handle: string;
+  userId?: number | null;
+  reason?: string | null;
+  req?: Request;
+}): void {
+  try {
+    const h = opts.req?.headers;
+    const ip =
+      h?.get("x-forwarded-for")?.split(",")[0].trim() ||
+      h?.get("x-real-ip") ||
+      null;
+    const ua = h?.get("user-agent")?.slice(0, 300) ?? null;
+    getDb()
+      .prepare(
+        `INSERT INTO auth_events (user_id, handle, kind, reason, ip, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(opts.userId ?? null, opts.handle, opts.kind, opts.reason ?? null, ip, ua);
+  } catch {
+    // logging is best-effort
   }
 }

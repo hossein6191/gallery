@@ -1,46 +1,75 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { AtSign, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [twitterHandle, setTwitterHandle] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const handleRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
-  const submit = async () => {
-    if (!twitterHandle || !password) return;
+  // Some mobile browsers restore/autofill the fields without firing React
+  // events, so values are always read straight from the inputs on submit.
+  useEffect(() => {
+    handleRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const submit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (loading) return;
+
+    const twitterHandle = handleRef.current?.value.trim() ?? "";
+    const password = passwordRef.current?.value ?? "";
+    if (!twitterHandle || !password) {
+      setError("یوزرنیم توییتر و رمز عبورت را وارد کن");
+      return;
+    }
+
     setLoading(true);
     setError("");
+
+    // never leave the button spinning if the network stalls
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25000);
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ twitterHandle, password }),
+        signal: controller.signal,
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "خطایی رخ داد");
         setLoading(false);
         return;
       }
-      router.push("/profile");
-      router.refresh();
-    } catch {
-      setError("ارتباط با سرور برقرار نشد");
+      // full page load: the session cookie is guaranteed to be in effect and
+      // no client-side router quirk can leave the button stuck
+      // deliberate full page load: router.push could leave the button
+      // spinning on mobile browsers, which is the bug this replaces
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign("/profile");
+    } catch (err) {
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "سرور جواب نداد — اینترنتت را چک کن و دوباره امتحان کن"
+          : "ارتباط با سرور برقرار نشد"
+      );
       setLoading(false);
+    } finally {
+      clearTimeout(timer);
     }
   };
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12">
-      <div className="glass-panel w-full max-w-md p-8">
+      <div className="glass-panel w-full max-w-md p-6 sm:p-8">
         <div className="text-center mb-8">
           <h1 className="font-nastaliq text-2xl font-black">ورود به گالری</h1>
           <p className="text-muted-foreground text-sm mt-2">
@@ -48,50 +77,60 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-medium">یوزرنیم توییتر (X)</label>
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <label htmlFor="login-handle" className="text-sm font-medium">
+            یوزرنیم توییتر (X)
+          </label>
           <div className="relative">
             <AtSign
               size={16}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
             />
             <input
+              id="login-handle"
+              ref={handleRef}
+              name="username"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
               dir="ltr"
               className="glass-input pr-11 text-left"
               placeholder="username"
-              value={twitterHandle}
-              onChange={(e) => setTwitterHandle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
+              onChange={() => error && setError("")}
             />
           </div>
 
-          <label className="text-sm font-medium">رمز عبور</label>
+          <label htmlFor="login-password" className="text-sm font-medium">
+            رمز عبور
+          </label>
           <div className="relative">
             <input
-              dir="ltr"
+              id="login-password"
+              ref={passwordRef}
+              name="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              enterKeyHint="go"
+              dir="ltr"
               className="glass-input pl-11 text-left"
               placeholder="********"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
+              onChange={() => error && setError("")}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
               aria-label="نمایش رمز"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
-          <LiquidButton
-            variant="primary"
-            className="mt-2 w-full"
-            disabled={!twitterHandle || !password || loading}
-            onClick={submit}
-          >
+          {/* Only `loading` disables it — a disabled-by-validation button looks
+              broken when the browser autofills the fields. */}
+          <LiquidButton type="submit" variant="primary" className="mt-2 w-full" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
@@ -101,7 +140,7 @@ export default function LoginPage() {
               "ورود"
             )}
           </LiquidButton>
-        </div>
+        </form>
 
         {error && <p className="mt-4 text-center text-sm text-destructive">{error}</p>}
 

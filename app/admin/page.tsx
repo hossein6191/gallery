@@ -13,6 +13,11 @@ import {
   ExternalLink,
   Search,
   Vote,
+  KeyRound,
+  LogIn,
+  Users,
+  AlertTriangle,
+  CheckCircle2 as CheckIcon,
 } from "lucide-react";
 
 type AdminPost = {
@@ -52,6 +57,68 @@ type AdminVote = {
   voter_joined: string;
 };
 
+type AuthEvent = {
+  id: number;
+  handle: string;
+  kind: "signup" | "login_success" | "login_failed" | "login_failed_no_user";
+  reason: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  created_at: string;
+  display_name: string | null;
+  discord_username: string | null;
+};
+
+type AdminMember = {
+  id: number;
+  twitter_handle: string;
+  display_name: string;
+  discord_username: string;
+  created_at: string;
+  posts: number;
+  votes_cast: number;
+  logins: number;
+  failed_logins: number;
+  last_login: string | null;
+};
+
+const EVENT_LABEL: Record<AuthEvent["kind"], { text: string; cls: string }> = {
+  signup: { text: "ثبت‌نام", cls: "bg-emerald-500/15 text-emerald-400" },
+  login_success: { text: "ورود موفق", cls: "bg-primary/15 text-primary" },
+  login_failed: { text: "رمز اشتباه", cls: "bg-destructive/15 text-destructive" },
+  login_failed_no_user: { text: "عضو نبوده", cls: "bg-amber-500/15 text-amber-400" },
+};
+
+/** "Chrome روی اندروید" — enough to answer "با چی وارد شد؟" */
+function deviceOf(ua: string | null): string {
+  if (!ua) return "نامشخص";
+  const os = /iPhone|iPad|iOS/i.test(ua)
+    ? "آیفون"
+    : /Android/i.test(ua)
+      ? "اندروید"
+      : /Windows/i.test(ua)
+        ? "ویندوز"
+        : /Mac OS X|Macintosh/i.test(ua)
+          ? "مک"
+          : /Linux/i.test(ua)
+            ? "لینوکس"
+            : "نامشخص";
+  const browser = /SamsungBrowser/i.test(ua)
+    ? "Samsung Internet"
+    : /Edg\//i.test(ua)
+      ? "Edge"
+      : /OPR\/|Opera/i.test(ua)
+        ? "Opera"
+        : /Firefox/i.test(ua)
+          ? "Firefox"
+          : /Chrome/i.test(ua)
+            ? "Chrome"
+            : /Safari/i.test(ua)
+              ? "Safari"
+              : "مرورگر نامشخص";
+  return `${browser} روی ${os}`;
+}
+
 // SQLite stores datetime('now') in UTC without a zone marker
 function faDate(sqliteUtc: string): string {
   const d = new Date(sqliteUtc.replace(" ", "T") + "Z");
@@ -85,6 +152,18 @@ export default function AdminPage() {
   // voter audit
   const [votes, setVotes] = useState<AdminVote[] | null>(null);
   const [votesLoading, setVotesLoading] = useState(false);
+
+  // auth log + members
+  const [events, setEvents] = useState<AuthEvent[] | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [onlyProblems, setOnlyProblems] = useState(false);
+  const [members, setMembers] = useState<AdminMember[] | null>(null);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [memberMsg, setMemberMsg] = useState("");
+  const [pwFor, setPwFor] = useState<AdminMember | null>(null);
+  const [pwValue, setPwValue] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [confirmMember, setConfirmMember] = useState<number | null>(null);
 
   const call = async (url: string, payload: Record<string, unknown>) => {
     const res = await fetch(url, {
@@ -153,6 +232,60 @@ export default function AdminPage() {
     setVotesLoading(false);
   };
 
+  const loadEvents = async () => {
+    setEventsLoading(true);
+    setError("");
+    try {
+      const data = await call("/api/admin/posts", { action: "authlog" });
+      setEvents(data.events);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
+    }
+    setEventsLoading(false);
+  };
+
+  const loadMembers = async () => {
+    setMembersLoading(true);
+    setError("");
+    setMemberMsg("");
+    try {
+      const data = await call("/api/admin/posts", { action: "members" });
+      setMembers(data.members);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
+    }
+    setMembersLoading(false);
+  };
+
+  const savePassword = async () => {
+    if (!pwFor) return;
+    setPwBusy(true);
+    try {
+      await call("/api/admin/posts", {
+        action: "set_password",
+        id: pwFor.id,
+        password: pwValue,
+      });
+      setMemberMsg(`رمز جدید برای @${pwFor.twitter_handle} ثبت شد: ${pwValue}`);
+      setPwFor(null);
+      setPwValue("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
+    }
+    setPwBusy(false);
+  };
+
+  const deleteMember = async (m: AdminMember) => {
+    try {
+      await call("/api/admin/posts", { action: "delete_member", id: m.id });
+      setMembers((list) => (list ? list.filter((x) => x.id !== m.id) : list));
+      setMemberMsg(`عضو @${m.twitter_handle} و همه پست‌هایش حذف شد`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ارتباط با سرور برقرار نشد");
+    }
+    setConfirmMember(null);
+  };
+
   const deletePost = async (id: number) => {
     setDeletingId(id);
     setPostMsg("");
@@ -210,6 +343,16 @@ export default function AdminPage() {
         <LiquidButton className="w-full" disabled={!key || postsLoading} onClick={loadPosts}>
           {postsLoading ? <Loader2 size={16} className="animate-spin" /> : <ListFilter size={16} />}
           مدیریت پست‌ها (نمایش لیست)
+        </LiquidButton>
+
+        <LiquidButton className="w-full" disabled={!key || eventsLoading} onClick={loadEvents}>
+          {eventsLoading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+          ورودها و ثبت‌نام‌ها (و کسانی که نتوانستند وارد شوند)
+        </LiquidButton>
+
+        <LiquidButton className="w-full" disabled={!key || membersLoading} onClick={loadMembers}>
+          {membersLoading ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
+          مدیریت اعضا (ریست رمز / حذف)
         </LiquidButton>
 
         <LiquidButton className="w-full" disabled={!key || votesLoading} onClick={loadVotes}>
@@ -374,6 +517,210 @@ export default function AdminPage() {
               })}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* ---- sign-ups & logins, including failures ---- */}
+      {events && (
+        <div className="glass-panel w-full max-w-3xl p-4 sm:p-6 flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-bold">
+              ورودها و ثبت‌نام‌ها{" "}
+              <span className="text-muted-foreground text-sm">({faNum(events.length)})</span>
+            </h2>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={onlyProblems}
+                onChange={(e) => setOnlyProblems(e.target.checked)}
+                className="accent-primary"
+              />
+              فقط ناموفق‌ها (کسانی که نتوانستند وارد شوند)
+            </label>
+          </div>
+          <ul className="flex flex-col divide-y divide-white/5">
+            {events
+              .filter((ev) => !onlyProblems || ev.kind.startsWith("login_failed"))
+              .map((ev) => {
+                const label = EVENT_LABEL[ev.kind];
+                const failed = ev.kind.startsWith("login_failed");
+                return (
+                  <li key={ev.id} className="py-2.5 flex items-start gap-2.5 text-xs">
+                    <span className={cn("shrink-0 rounded-full px-2 py-0.5 font-bold", label.cls)}>
+                      {label.text}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={avatarUrl(ev.handle)}
+                          alt=""
+                          className="w-4 h-4 rounded-full object-cover"
+                        />
+                        <span className="font-bold" dir="ltr">
+                          @{ev.handle}
+                        </span>
+                        {ev.display_name && <span>{ev.display_name}</span>}
+                        {ev.discord_username && (
+                          <span className="text-muted-foreground" dir="ltr">
+                            {ev.discord_username}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground mt-1">
+                        <span>{faDate(ev.created_at)}</span>
+                        <span>· {deviceOf(ev.user_agent)}</span>
+                        {ev.ip && (
+                          <span>
+                            · <span dir="ltr">{ev.ip}</span>
+                          </span>
+                        )}
+                        {failed && ev.reason && (
+                          <span className="text-destructive">· {ev.reason}</span>
+                        )}
+                      </div>
+                    </div>
+                    {failed ? (
+                      <AlertTriangle size={14} className="text-destructive shrink-0 mt-0.5" />
+                    ) : (
+                      <CheckIcon size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                    )}
+                  </li>
+                );
+              })}
+          </ul>
+          {events.length === 0 && (
+            <p className="text-center text-muted-foreground text-sm py-4">
+              هنوز ورود یا ثبت‌نامی ثبت نشده (این لاگ از الان به بعد پر می‌شود)
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ---- members ---- */}
+      {members && (
+        <div className="glass-panel w-full max-w-3xl p-4 sm:p-6 flex flex-col gap-4">
+          <h2 className="font-bold">
+            اعضا <span className="text-muted-foreground text-sm">({faNum(members.length)})</span>
+          </h2>
+          {memberMsg && <p className="text-xs text-emerald-400 break-all">{memberMsg}</p>}
+          <ul className="flex flex-col divide-y divide-white/5">
+            {members.map((m) => (
+              <li key={m.id} className="py-3 flex flex-wrap items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl(m.twitter_handle)}
+                  alt=""
+                  className="w-9 h-9 rounded-full object-cover shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 text-sm">
+                    <span className="font-bold">{m.display_name}</span>
+                    <span className="text-xs text-muted-foreground" dir="ltr">
+                      @{m.twitter_handle}
+                    </span>
+                    <span className="text-xs text-muted-foreground" dir="ltr">
+                      {m.discord_username}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground mt-1">
+                    <span>عضو از {faDate(m.created_at)}</span>
+                    <span>· {faNum(m.posts)} پست</span>
+                    <span>· {faNum(m.votes_cast)} رای داده</span>
+                    <span>· {faNum(m.logins)} ورود</span>
+                    {m.failed_logins > 0 && (
+                      <span className="text-amber-400">
+                        · {faNum(m.failed_logins)} تلاش ناموفق
+                      </span>
+                    )}
+                    <span>
+                      · آخرین ورود: {m.last_login ? faDate(m.last_login) : "هیچ‌وقت"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      setPwFor(m);
+                      setPwValue("");
+                      setMemberMsg("");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-[11px] hover:bg-white/10"
+                    title="رمز جدید برایش بگذار"
+                  >
+                    <KeyRound size={12} />
+                    رمز جدید
+                  </button>
+                  {confirmMember === m.id ? (
+                    <>
+                      <button
+                        onClick={() => deleteMember(m)}
+                        className="rounded-full bg-destructive/20 text-destructive px-3 py-1 text-[11px] font-bold"
+                      >
+                        حذف شود
+                      </button>
+                      <button
+                        onClick={() => setConfirmMember(null)}
+                        className="rounded-full bg-white/10 px-3 py-1 text-[11px]"
+                      >
+                        نه
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmMember(m.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      title="حذف عضو و همه پست‌هایش"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ---- set a new password for a member ---- */}
+      {pwFor && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setPwFor(null)}
+        >
+          <div
+            className="glass-panel bg-card/95 w-full max-w-sm p-6 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold flex items-center gap-2">
+              <KeyRound size={16} className="text-primary" />
+              رمز جدید برای <span dir="ltr">@{pwFor.twitter_handle}</span>
+            </h3>
+            <p className="text-muted-foreground text-xs leading-6 mt-2">
+              رمز جدید را خودت بگذار و به همان شخص بده تا بتواند وارد شود. حداقل ۸
+              کاراکتر.
+            </p>
+            <input
+              dir="ltr"
+              className="glass-input text-left mt-3"
+              placeholder="رمز جدید"
+              value={pwValue}
+              onChange={(e) => setPwValue(e.target.value)}
+            />
+            <div className="flex gap-2 mt-4">
+              <LiquidButton className="flex-1" onClick={() => setPwFor(null)}>
+                انصراف
+              </LiquidButton>
+              <LiquidButton
+                variant="primary"
+                className="flex-1"
+                disabled={pwBusy}
+                onClick={savePassword}
+              >
+                {pwBusy ? <Loader2 size={16} className="animate-spin" /> : "ذخیره رمز"}
+              </LiquidButton>
+            </div>
+          </div>
         </div>
       )}
 

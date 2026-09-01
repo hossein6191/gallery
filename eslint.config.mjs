@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // macOS writes ._* metadata files on this external drive
+    "**/._*",
   ]),
 ]);
 

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
@@ -143,15 +142,8 @@ export default function SubmitPage() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center py-12">
       <div className="glass-panel w-full max-w-lg p-8">
-        <AnimatePresence mode="wait">
           {phase === "form" && (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col gap-4"
-            >
+            <div key="form" className="animate-step flex flex-col gap-4">
               <h1 className="font-nastaliq text-2xl font-black text-center">ثبت پست جدید</h1>
               <p className="text-muted-foreground text-sm text-center leading-7">
                 لینک توییتت را وارد کن؛ در مرحله بعد بخشش را انتخاب می‌کنی.
@@ -192,17 +184,11 @@ export default function SubmitPage() {
               >
                 ادامه
               </LiquidButton>
-            </motion.div>
+            </div>
           )}
 
           {phase === "category" && (
-            <motion.div
-              key="category"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col gap-6"
-            >
+            <div key="category" className="animate-step flex flex-col gap-6">
               <h1 className="text-xl font-black text-center">
                 این پست در کدام بخش شرکت می‌کند؟
               </h1>
@@ -260,17 +246,11 @@ export default function SubmitPage() {
               >
                 بازگشت و ویرایش لینک
               </button>
-            </motion.div>
+            </div>
           )}
 
           {phase === "file" && category && category !== "text" && (
-            <motion.div
-              key="file"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col gap-4"
-            >
+            <div key="file" className="animate-step flex flex-col gap-4">
               <h1 className="text-xl font-black text-center">
                 {category === "art" ? "فایل اثرت را آپلود کن" : "فایل ویدیوت را آپلود کن"}
               </h1>
@@ -330,17 +310,11 @@ export default function SubmitPage() {
                   ثبت پست
                 </LiquidButton>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {phase === "saving" && (
-            <motion.div
-              key="saving"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-6 py-8"
-            >
+            <div key="saving" className="animate-step flex flex-col items-center gap-6 py-8">
               <AnimatedCircularProgressBar
                 max={100}
                 min={0}
@@ -351,16 +325,11 @@ export default function SubmitPage() {
               <p className="text-muted-foreground text-sm">
                 در حال آپلود و ذخیره پست...
               </p>
-            </motion.div>
+            </div>
           )}
 
           {phase === "done" && (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center gap-5 py-8 text-center"
-            >
+            <div key="done" className="animate-step flex flex-col items-center gap-5 py-8 text-center">
               <CheckCircle2 size={56} className="text-emerald-400" />
               <h2 className="text-xl font-black">پستت ثبت شد!</h2>
               {inContest ? (
@@ -393,9 +362,8 @@ export default function SubmitPage() {
                   ثبت پست دیگر
                 </LiquidButton>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
     </div>
   );
