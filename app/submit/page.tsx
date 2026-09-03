@@ -72,7 +72,10 @@ export default function SubmitPage() {
     setCategory(chosen);
     setFile(null);
     setError("");
-    if (chosen === "text") {
+    // Text and video need only the link: the video is read from the tweet.
+    // The file step is reached for art, or when the server could not find a
+    // video in the tweet and asks for one.
+    if (chosen === "text" || chosen === "video") {
       startSave(chosen, null);
     } else {
       setPhase("file");
@@ -99,7 +102,7 @@ export default function SubmitPage() {
       if (progressTimer.current) clearInterval(progressTimer.current);
       if (!res.ok) {
         setError(data.error ?? "خطایی رخ داد");
-        setPhase(chosen === "text" ? "category" : "file");
+        setPhase(data.needsFile ? "file" : chosen === "art" ? "file" : "category");
         setProgress(0);
         return;
       }
@@ -236,7 +239,7 @@ export default function SubmitPage() {
                   </span>
                   <span className="font-bold text-sm">ویدیویی</span>
                   <span className="text-muted-foreground text-[11px] text-center leading-5">
-                    توییت + آپلود ویدیو — فعلا بدون برنده هفتگی
+                    فقط لینک توییت کافیست — ویدیو از خود توییت خوانده می‌شود
                   </span>
                 </button>
               </div>
@@ -253,7 +256,9 @@ export default function SubmitPage() {
           {phase === "file" && category && category !== "text" && (
             <div key="file" className="animate-step flex flex-col gap-4">
               <h1 className="text-xl font-black text-center">
-                {category === "art" ? "فایل اثرت را آپلود کن" : "فایل ویدیوت را آپلود کن"}
+                {category === "art"
+                  ? "فایل اثرت را آپلود کن"
+                  : "ویدیویی در توییت پیدا نشد — فایلش را آپلود کن"}
               </h1>
               <p className="text-muted-foreground text-sm text-center leading-7">
                 {CATEGORY_INFO[category].fileLabel}

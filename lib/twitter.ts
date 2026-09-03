@@ -9,6 +9,10 @@ export type FetchedTweet = {
   text: string | null;
   imageUrl: string | null;
   mediaType: "photo" | "video" | null;
+  /** Direct mp4 on video.twimg.com when the tweet carries a video — served
+   *  with byte ranges and open CORS, so a <video> tag plays it straight from
+   *  X's CDN and nothing has to be uploaded or stored here. */
+  videoUrl: string | null;
   createdAt: string | null; // ISO date of the tweet itself
   authorHandle: string | null;
 };
@@ -37,6 +41,18 @@ function decodeEntities(s: string): string {
     .replace(/&amp;/g, "&");
 }
 
+type Variant = { bitrate?: number; content_type?: string; type?: string; url?: string; src?: string };
+
+/** The highest-bitrate mp4 among a tweet's video variants, if it is X's own CDN. */
+function bestMp4(variants: Variant[] | undefined): string | null {
+  const mp4 = (variants ?? []).filter(
+    (v) => (v.content_type ?? v.type) === "video/mp4" && typeof (v.url ?? v.src) === "string"
+  );
+  mp4.sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
+  const url = mp4[0] ? (mp4[0].url ?? mp4[0].src ?? null) : null;
+  return url && /^https:\/\/video\.twimg\.com\//.test(url) ? url : null;
+}
+
 function cleanTweetText(raw: string): string {
   return decodeEntities(raw)
     .replace(/https?:\/\/t\.co\/\S+/g, "")
@@ -49,7 +65,7 @@ async function fetchViaApi(tweetId: string, token: string): Promise<FetchedTweet
   const params = new URLSearchParams({
     "tweet.fields": "text,created_at,attachments",
     expansions: "attachments.media_keys,author_id",
-    "media.fields": "url,preview_image_url,type",
+    "media.fields": "url,preview_image_url,type,variants",
     "user.fields": "username",
   });
   const res = await fetch(`https://api.twitter.com/2/tweets/${tweetId}?${params}`, {
@@ -60,8 +76,12 @@ async function fetchViaApi(tweetId: string, token: string): Promise<FetchedTweet
   const json = await res.json();
   if (!json?.data) return null;
 
-  const media: { type?: string; url?: string; preview_image_url?: string }[] =
-    json.includes?.media ?? [];
+  const media: {
+    type?: string;
+    url?: string;
+    preview_image_url?: string;
+    variants?: Variant[];
+  }[] = json.includes?.media ?? [];
   const photo = media.find((m) => m.type === "photo");
   const video = media.find((m) => m.type === "video" || m.type === "animated_gif");
   const author = json.includes?.users?.[0];
@@ -70,6 +90,7 @@ async function fetchViaApi(tweetId: string, token: string): Promise<FetchedTweet
     text: json.data.text ? cleanTweetText(json.data.text) : null,
     imageUrl: photo?.url ?? video?.preview_image_url ?? null,
     mediaType: photo ? "photo" : video ? "video" : null,
+    videoUrl: bestMp4(video?.variants),
     createdAt: json.data.created_at ?? null,
     authorHandle: author?.username ?? null,
   };
@@ -114,17 +135,28 @@ async function fetchViaSyndication(tweetId: string): Promise<FetchedTweet | null
     if (!json || json.__typename !== "Tweet" || typeof json.text !== "string") return null;
 
     const mediaOf = (t: Record<string, unknown> | undefined) => {
-      if (!t) return { photo: null as string | null, poster: null as string | null, video: false };
+      if (!t)
+        return {
+          photo: null as string | null,
+          poster: null as string | null,
+          video: false,
+          videoUrl: null as string | null,
+        };
       const photos = (Array.isArray(t.photos) ? t.photos : []) as { url?: string }[];
       const details = (Array.isArray(t.mediaDetails) ? t.mediaDetails : []) as {
         type?: string;
         media_url_https?: string;
+        video_info?: { variants?: Variant[] };
       }[];
-      const video = t.video as { poster?: string } | undefined;
+      const video = t.video as { poster?: string; variants?: Variant[] } | undefined;
+      const clip = details.find((m) => m.type === "video" || m.type === "animated_gif");
       return {
         photo: photos[0]?.url ?? details.find((m) => m.type === "photo")?.media_url_https ?? null,
         poster: video?.poster ?? null,
-        video: Boolean(video) || details.some((m) => m.type === "video" || m.type === "animated_gif"),
+        video: Boolean(video) || Boolean(clip),
+        // mediaDetails carries bitrates, so it is asked first; the top-level
+        // video.variants is the fallback when it is missing.
+        videoUrl: bestMp4(clip?.video_info?.variants) ?? bestMp4(video?.variants),
       };
     };
 
@@ -163,6 +195,7 @@ async function fetchViaSyndication(tweetId: string): Promise<FetchedTweet | null
       text: text || null,
       imageUrl,
       mediaType,
+      videoUrl: own.videoUrl ?? quoted.videoUrl,
       createdAt: typeof json.created_at === "string" ? json.created_at : null,
       authorHandle: json.user?.screen_name ?? null,
     };
@@ -201,7 +234,7 @@ async function fetchViaOEmbed(tweetUrl: string): Promise<FetchedTweet | null> {
         ? json.author_url.split("/").filter(Boolean).pop() ?? null
         : null;
 
-    return { text, imageUrl: null, mediaType: null, createdAt, authorHandle: handle };
+    return { text, imageUrl: null, mediaType: null, videoUrl: null, createdAt, authorHandle: handle };
   } catch {
     return null;
   }

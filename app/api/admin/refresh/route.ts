@@ -29,6 +29,8 @@ export async function POST(req: Request) {
      SET tweet_text = COALESCE(?, tweet_text),
          image_url = COALESCE(?, image_url),
          tweet_date = COALESCE(?, tweet_date),
+         file_url = COALESCE(?, file_url),
+         file_type = COALESCE(?, file_type),
          week_number = ?
      WHERE id = ?`
   );
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
   let updated = 0;
   let failed = 0;
   let reinstated = 0;
+  let linked = 0;
   for (const row of rows) {
     const fetched = await fetchTweet(row.tweet_url);
     if (!fetched) {
@@ -53,9 +56,23 @@ export async function POST(req: Request) {
         reinstated++;
       }
     }
-    update.run(fetched.text, fetched.imageUrl, fetched.createdAt, weekNumber, row.id);
+    // Video posts that were never uploaded (or whose tweet now has a readable
+    // video) get the tweet's own mp4. An uploaded file is never replaced.
+    const keepsUpload = row.file_url?.startsWith("/api/uploads/") ?? false;
+    const remoteVideo =
+      row.category === "video" && !keepsUpload && fetched.videoUrl ? fetched.videoUrl : null;
+    if (remoteVideo && remoteVideo !== row.file_url) linked++;
+    update.run(
+      fetched.text,
+      fetched.imageUrl,
+      fetched.createdAt,
+      remoteVideo,
+      remoteVideo ? "video" : null,
+      weekNumber,
+      row.id
+    );
     updated++;
   }
 
-  return NextResponse.json({ ok: true, total: rows.length, updated, failed, reinstated });
+  return NextResponse.json({ ok: true, total: rows.length, updated, failed, reinstated, linked });
 }

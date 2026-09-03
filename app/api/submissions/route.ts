@@ -120,13 +120,11 @@ export async function POST(req: Request) {
       );
     }
   }
-  if (category === "video") {
-    if (!file) {
-      return NextResponse.json(
-        { error: "برای بخش ویدیو باید فایل ویدیوت را آپلود کنی" },
-        { status: 400 }
-      );
-    }
+  // A video post no longer needs a file: the tweet's own mp4 is used when X
+  // hands one back (checked further down, after the tweet is fetched). A file
+  // is only validated here if one was sent, as the fallback for a tweet whose
+  // video cannot be read.
+  if (category === "video" && file) {
     if (!VIDEO_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "فایل ویدیو باید MP4، WebM یا MOV باشد" },
@@ -166,6 +164,21 @@ export async function POST(req: Request) {
   }
   let fileUrl: string | null = null;
   let fileType: "image" | "video" | null = null;
+  if (category === "video" && fetched?.videoUrl) {
+    // Straight from X's CDN. Nothing is stored on the volume, and a file the
+    // member also attached is ignored rather than kept for nothing.
+    fileUrl = fetched.videoUrl;
+    fileType = "video";
+    file = null;
+  } else if (category === "video" && !file) {
+    return NextResponse.json(
+      {
+        error: "ویدیویی در این توییت پیدا نشد. اگر توییت ویدیو دارد، فایلش را آپلود کن",
+        needsFile: true,
+      },
+      { status: 422 }
+    );
+  }
   if (file) {
     const ext = EXT_BY_TYPE[file.type] ?? "bin";
     const name = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;

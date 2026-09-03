@@ -18,6 +18,12 @@ const nastaliq = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
+  // X's video CDN (video.twimg.com) answers 403 to any request that carries
+  // a foreign Referer and 206 to one that carries none — measured with the
+  // gallery's own domain, which was refused too. Video posts play straight
+  // from that CDN, so this document sends no Referer anywhere. Nothing here
+  // reads one, and the posters on pbs.twimg.com load either way.
+  referrer: "no-referrer",
   title: "گالری فارسی GenLayer",
   description:
     "گالری جامعه فارسی GenLayer — آثار هنری و محتوای متنی اعضا، مسابقه هفتگی و برندگان",

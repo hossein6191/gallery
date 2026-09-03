@@ -50,6 +50,7 @@ export function TweetCard({
       {showVideo && (
         <video
           src={item.file_url!}
+          poster={item.image_url ?? undefined}
           controls
           preload="metadata"
           playsInline

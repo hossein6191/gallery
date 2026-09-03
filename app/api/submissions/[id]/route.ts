@@ -50,10 +50,17 @@ export async function PATCH(
     }
   }
 
+  // A video post follows its tweet: a new link with a video in it replaces the
+  // remote URL. A file the member uploaded is theirs and is left alone.
+  const keepsUpload = row.file_url?.startsWith("/api/uploads/") ?? false;
+  const remoteVideo =
+    row.category === "video" && !keepsUpload && fetched?.videoUrl ? fetched.videoUrl : null;
+
   db.prepare(
     `UPDATE submissions
      SET tweet_url = ?, tweet_id = ?, tweet_text = COALESCE(?, tweet_text),
          image_url = COALESCE(?, image_url), tweet_date = COALESCE(?, tweet_date),
+         file_url = COALESCE(?, file_url), file_type = COALESCE(?, file_type),
          week_number = ?, edited = 1
      WHERE id = ?`
   ).run(
@@ -62,6 +69,8 @@ export async function PATCH(
     fetched?.text ?? null,
     fetched?.imageUrl ?? null,
     fetched?.createdAt ?? null,
+    remoteVideo,
+    remoteVideo ? "video" : null,
     weekNumber,
     row.id
   );
