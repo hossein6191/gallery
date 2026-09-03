@@ -12,12 +12,17 @@
  */
 const MB = 1024 * 1024;
 
-function mb(name: string, fallback: number): number {
-  const raw = Number(process.env[name]);
-  return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+function mb(raw: string | undefined, fallback: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-export const MAX_IMAGE_MB = mb("NEXT_PUBLIC_MAX_IMAGE_MB", 8);
-export const MAX_VIDEO_MB = mb("NEXT_PUBLIC_MAX_VIDEO_MB", 250);
+// Written out in full on purpose. Next only inlines NEXT_PUBLIC_ variables
+// into the client bundle when they are referenced as process.env.NAME; a
+// process.env[name] lookup is left alone and reads an empty object in the
+// browser, so the page would keep saying 250 while the server enforced
+// whatever the host was set to — the exact drift this file exists to stop.
+export const MAX_IMAGE_MB = mb(process.env.NEXT_PUBLIC_MAX_IMAGE_MB, 8);
+export const MAX_VIDEO_MB = mb(process.env.NEXT_PUBLIC_MAX_VIDEO_MB, 250);
 export const MAX_IMAGE_BYTES = MAX_IMAGE_MB * MB;
 export const MAX_VIDEO_BYTES = MAX_VIDEO_MB * MB;
