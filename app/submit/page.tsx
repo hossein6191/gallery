@@ -6,7 +6,8 @@ import Link from "next/link";
 import confetti from "canvas-confetti";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
-import { cn } from "@/lib/utils";
+import { cn, faNum } from "@/lib/utils";
+import { MAX_IMAGE_BYTES, MAX_IMAGE_MB, MAX_VIDEO_BYTES, MAX_VIDEO_MB } from "@/lib/limits";
 import {
   Palette,
   FileText,
@@ -21,9 +22,9 @@ type Category = "art" | "text" | "video";
 type Phase = "form" | "category" | "file" | "saving" | "done";
 
 const CATEGORY_INFO: Record<Category, { label: string; accept: string; fileLabel: string }> = {
-  art: { label: "هنری", accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: "فایل اثرت (تصویر، حداکثر ۸ مگابایت)" },
+  art: { label: "هنری", accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: `فایل اثرت (تصویر، حداکثر ${faNum(MAX_IMAGE_MB)} مگابایت)` },
   text: { label: "متنی", accept: "", fileLabel: "" },
-  video: { label: "ویدیویی", accept: "video/mp4,video/webm,video/quicktime", fileLabel: "فایل ویدیوت (MP4/WebM/MOV، حداکثر ۶۰ مگابایت)" },
+  video: { label: "ویدیویی", accept: "video/mp4,video/webm,video/quicktime", fileLabel: `فایل ویدیوت (MP4/WebM/MOV، حداکثر ${faNum(MAX_VIDEO_MB)} مگابایت)` },
 };
 
 export default function SubmitPage() {
@@ -257,18 +258,28 @@ export default function SubmitPage() {
               <p className="text-muted-foreground text-sm text-center leading-7">
                 {CATEGORY_INFO[category].fileLabel}
               </p>
-              {category === "video" && (
-                <p className="text-center text-xs text-amber-400 leading-6">
-                  بخش ویدیو تازه راه افتاده و تعداد پست‌هایش کم است — فعلا برنده
-                  هفتگی ندارد ولی در گالری نمایش داده می‌شود.
-                </p>
-              )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept={CATEGORY_INFO[category].accept}
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const picked = e.target.files?.[0] ?? null;
+                  // Refuse here, before a quarter-gigabyte leaves the phone only
+                  // to be refused by the server with the same words.
+                  const cap = category === "video" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+                  const capMb = category === "video" ? MAX_VIDEO_MB : MAX_IMAGE_MB;
+                  if (picked && picked.size > cap) {
+                    setError(
+                      `این فایل ${faNum(Math.ceil(picked.size / (1024 * 1024)))} مگابایت است؛ حداکثر ${faNum(capMb)} مگابایت`
+                    );
+                    setFile(null);
+                    e.target.value = "";
+                    return;
+                  }
+                  setError("");
+                  setFile(picked);
+                }}
               />
               <button
                 onClick={() => fileInputRef.current?.click()}

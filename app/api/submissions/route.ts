@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { getDb, currentWeekNumber, uploadsDir, type SubmissionRow } from "@/lib/db";
+import { MAX_IMAGE_BYTES, MAX_IMAGE_MB, MAX_VIDEO_BYTES, MAX_VIDEO_MB } from "@/lib/limits";
+import { faNum } from "@/lib/utils";
 import { getSessionUser } from "@/lib/auth";
 import { fetchTweet, isTweetUrl } from "@/lib/twitter";
 
@@ -48,8 +52,6 @@ export async function GET(req: Request) {
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
-const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // 60MB
 const MAX_TWEET_AGE_MS = 7 * 24 * 60 * 60 * 1000; // tweets older than a week stay gallery-only
 
 const EXT_BY_TYPE: Record<string, string> = {
@@ -112,7 +114,10 @@ export async function POST(req: Request) {
       );
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json({ error: "حجم تصویر حداکثر ۸ مگابایت است" }, { status: 400 });
+      return NextResponse.json(
+        { error: `حجم تصویر حداکثر ${faNum(MAX_IMAGE_MB)} مگابایت است` },
+        { status: 400 }
+      );
     }
   }
   if (category === "video") {
@@ -129,7 +134,10 @@ export async function POST(req: Request) {
       );
     }
     if (file.size > MAX_VIDEO_BYTES) {
-      return NextResponse.json({ error: "حجم ویدیو حداکثر ۶۰ مگابایت است" }, { status: 400 });
+      return NextResponse.json(
+        { error: `حجم ویدیو حداکثر ${faNum(MAX_VIDEO_MB)} مگابایت است` },
+        { status: 400 }
+      );
     }
   }
 
@@ -161,8 +169,19 @@ export async function POST(req: Request) {
   if (file) {
     const ext = EXT_BY_TYPE[file.type] ?? "bin";
     const name = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(path.join(uploadsDir(), name), buffer);
+    // Stream to disk rather than arrayBuffer() → Buffer → writeFileSync, which
+    // held a second full copy of the file in memory. A failed write leaves no
+    // half-file behind to be served later as a broken video.
+    const target = path.join(uploadsDir(), name);
+    try {
+      await pipeline(
+        Readable.fromWeb(file.stream() as import("node:stream/web").ReadableStream),
+        fs.createWriteStream(target)
+      );
+    } catch (err) {
+      fs.rmSync(target, { force: true });
+      throw err;
+    }
     fileUrl = `/api/uploads/${name}`;
     fileType = file.type.startsWith("video/") ? "video" : "image";
   }
